@@ -6,3 +6,7 @@ export const logMessageKeys = {
   progessTitle: "driver.apiSecret.progressBar.createApiSecretTitle",
   startExecuteDriver: "driver.apiSecret.log.startExecuteDriver",
 };
+
+export const maxSecretPerApiKey = 2;
+
+export const apiKeyClientSecretReg = "/^(w){10, 128}(,s*w{10, 128})*/";

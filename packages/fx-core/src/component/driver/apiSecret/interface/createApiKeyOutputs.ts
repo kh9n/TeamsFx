@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export type CreateApiSecretOutputs = {
+export type CreateApiKeyOutputs = {
   registrationId: string;
 };
 
