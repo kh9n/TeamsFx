@@ -512,7 +512,7 @@ jobs:
         with:
           repository: OfficeDev/TeamsFx-Samples
           ref: dev
-          path: packages/fx-core/src/e2e/resource
+          path: packages/fx-core/resource
 
       - name: Download samples from another repo
         if: startsWith(matrix.cases, './samples/') && contains(matrix.cases, 'ProactiveMessage')
@@ -520,7 +520,7 @@ jobs:
         with:
           repository: OfficeDev/Microsoft-Teams-Samples
           ref: main
-          path: packages/fx-core/src/e2e/resource
+          path: packages/fx-core/resource
       
       - name: Download samples from office repo
         if: startsWith(matrix.cases, './samples/') && contains(matrix.cases, 'SignatureOutlook')
@@ -528,7 +528,7 @@ jobs:
         with:
           repository: OfficeDev/Office-Add-in-samples
           ref: main
-          path: packages/fx-core/src/e2e/resource
+          path: packages/fx-core/resource
       
       - name: run test for coverage
         working-directory: packages/fx-core
