@@ -507,7 +507,6 @@ jobs:
           npm run setup
 
       - name: Download samples(daily)
-        if: github.event_name == 'schedule' && startsWith(matrix.cases, './samples/') && contains(matrix.cases, 'ProactiveMessage') == false
         uses: actions/checkout@v3
         with:
           repository: OfficeDev/TeamsFx-Samples
@@ -515,7 +514,6 @@ jobs:
           path: packages/fx-core/resource
 
       - name: Download samples from another repo
-        if: startsWith(matrix.cases, './samples/') && contains(matrix.cases, 'ProactiveMessage')
         uses: actions/checkout@v3
         with:
           repository: OfficeDev/Microsoft-Teams-Samples
@@ -523,7 +521,6 @@ jobs:
           path: packages/fx-core/resource
       
       - name: Download samples from office repo
-        if: startsWith(matrix.cases, './samples/') && contains(matrix.cases, 'SignatureOutlook')
         uses: actions/checkout@v3
         with:
           repository: OfficeDev/Office-Add-in-samples
