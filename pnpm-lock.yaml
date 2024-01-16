@@ -1912,6 +1912,9 @@ importers:
       '@microsoft/teamsfx-core':
         specifier: workspace:*
         version: link:../fx-core
+      '@microsoft/vscode-azext-azureauth':
+        specifier: ^2.3.0
+        version: 2.3.0
       '@microsoft/vscode-ui':
         specifier: workspace:*
         version: link:../vscode-ui
@@ -2451,6 +2454,19 @@ packages:
       '@azure/core-paging': 1.5.0
       '@azure/core-rest-pipeline': 1.12.0(supports-color@9.4.0)
       tslib: 2.6.1
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /@azure/arm-resources-subscriptions@2.1.0:
+    resolution: {integrity: sha512-vKiu/3Yh84IV3IuJJ+0Fgs/ZQpvuGzoZ3dAoBksIV++Uu/Qz9RcQVz7pj+APWYIuODuR9I0eGKswZvzynzekug==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      '@azure/core-auth': 1.5.0
+      '@azure/core-client': 1.7.3(supports-color@9.4.0)
+      '@azure/core-paging': 1.5.0
+      '@azure/core-rest-pipeline': 1.12.0(supports-color@9.4.0)
+      tslib: 2.6.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -8903,6 +8919,15 @@ packages:
   /@microsoft/tsdoc@0.13.2:
     resolution: {integrity: sha512-WrHvO8PDL8wd8T2+zBGKrMwVL5IyzR3ryWUsl0PXgEV0QHup4mTLi0QcATefGI6Gx9Anu7vthPyyyLpY0EpiQg==}
     dev: true
+
+  /@microsoft/vscode-azext-azureauth@2.3.0:
+    resolution: {integrity: sha512-mnVIyke5rc9ua+g81zF133UCZerKJwILJ51OvMv24VVfdo9qYaqgy2kOa/O6JwICXylcpL2/ODNw+RkFg58b1g==}
+    dependencies:
+      '@azure/arm-resources-subscriptions': 2.1.0
+      '@azure/ms-rest-azure-env': 2.0.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1:
     resolution: {integrity: sha512-54/JRvkLIzzDWshCWfuhadfrfZVPiElY8Fcgmg1HroEly/EDSszzhBAsarCux+D/kOslTRquNzuyGSmUSTTHGg==}

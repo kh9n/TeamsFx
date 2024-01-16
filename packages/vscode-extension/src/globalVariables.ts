@@ -7,6 +7,10 @@ import * as vscode from "vscode";
 import { UserState } from "./constants";
 import { UriHandler } from "./uriHandler";
 import { isValidProject } from "@microsoft/teamsfx-core";
+import {
+  AzureSubscriptionProvider,
+  VSCodeAzureSubscriptionProvider,
+} from "@microsoft/vscode-azext-azureauth";
 
 /**
  * Common variables used throughout the extension. They must be initialized in the activate() method of extension.ts
@@ -19,6 +23,7 @@ export let isExistingUser = "no";
 export let uriEventHandler: UriHandler;
 export let defaultExtensionLogPath: string;
 export let commandIsRunning = false;
+export let subscriptionProviderFactory: () => Promise<AzureSubscriptionProvider>;
 
 if (vscode.workspace && vscode.workspace.workspaceFolders) {
   if (vscode.workspace.workspaceFolders.length > 0) {
@@ -41,6 +46,7 @@ export function initializeGlobalVariables(ctx: vscode.ExtensionContext): void {
   } else {
     isSPFxProject = fs.existsSync(path.join(workspaceUri?.fsPath ?? "./", "SPFx"));
   }
+  subscriptionProviderFactory = createVSCodeAzureSubscriptionProviderFactory();
 }
 
 export function checkIsSPFx(directory: string): boolean {
@@ -69,4 +75,17 @@ export function setCommandIsRunning(isRunning: boolean) {
 // Only used by checkProjectUpgradable() when error happens
 export function unsetIsTeamsFxProject() {
   isTeamsFxProject = false;
+}
+
+let vscodeAzureSubscriptionProvider: VSCodeAzureSubscriptionProvider | undefined;
+
+export function createVSCodeAzureSubscriptionProviderFactory(): () => Promise<VSCodeAzureSubscriptionProvider> {
+  return async (): Promise<VSCodeAzureSubscriptionProvider> => {
+    vscodeAzureSubscriptionProvider ??= await createVSCodeAzureSubscriptionProvider();
+    return vscodeAzureSubscriptionProvider;
+  };
+}
+
+async function createVSCodeAzureSubscriptionProvider(): Promise<VSCodeAzureSubscriptionProvider> {
+  return Promise.resolve(new VSCodeAzureSubscriptionProvider());
 }

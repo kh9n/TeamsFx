@@ -1386,10 +1386,10 @@
     "react-copy-to-clipboard": "^5.1.0",
     "react-syntax-highlighter": "^15.5.0",
     "validator": "^13.7.0",
-    "vscode-tas-client": "^0.1.47"
+    "vscode-tas-client": "^0.1.47",
+    "@microsoft/vscode-azext-azureauth": "^2.3.0"
   },
   "extensionDependencies": [
-    "ms-vscode.azure-account",
     "redhat.vscode-yaml"
   ],
   "gitHead": "7d60c0765c0ea8c023a26c10d1c93001c597afbb",
