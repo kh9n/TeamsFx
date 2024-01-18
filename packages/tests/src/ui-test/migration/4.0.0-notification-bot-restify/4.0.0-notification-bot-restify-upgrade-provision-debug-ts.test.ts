@@ -23,6 +23,7 @@ import {
 import {
   CLIVersionCheck,
   getBotSiteEndpoint,
+  updateDeverloperInManifestFile,
 } from "../../../utils/commonUtils";
 
 describe("Migration Tests", function () {
@@ -75,6 +76,9 @@ describe("Migration Tests", function () {
       // enable cli v3
       CliHelper.setV3Enable();
 
+      await updateDeverloperInManifestFile(
+        mirgationDebugTestContext.projectPath
+      );
       // remote provision
       await mirgationDebugTestContext.provisionWithCLI("dev", true);
       // remote deploy

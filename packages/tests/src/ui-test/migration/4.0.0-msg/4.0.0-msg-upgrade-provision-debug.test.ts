@@ -16,7 +16,10 @@ import {
   upgradeByTreeView,
   validateUpgrade,
 } from "../../../utils/vscodeOperation";
-import { CLIVersionCheck } from "../../../utils/commonUtils";
+import {
+  CLIVersionCheck,
+  updateDeverloperInManifestFile,
+} from "../../../utils/commonUtils";
 
 describe("Migration Tests", function () {
   this.timeout(Timeout.testCase);
@@ -63,6 +66,9 @@ describe("Migration Tests", function () {
       // enable cli v3
       CliHelper.setV3Enable();
 
+      await updateDeverloperInManifestFile(
+        mirgationDebugTestContext.projectPath
+      );
       // v3 provision
       await mirgationDebugTestContext.provisionWithCLI("dev", true);
       // v3 deploy
