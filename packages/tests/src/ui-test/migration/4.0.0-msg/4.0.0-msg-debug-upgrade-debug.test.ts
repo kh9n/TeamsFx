@@ -85,10 +85,7 @@ describe("Migration Tests", function () {
         );
 
         console.log("Start Bot");
-        await waitForTerminal(
-          LocalDebugTaskLabel.StartBot,
-          LocalDebugTaskResult.AppSuccess
-        );
+        await waitForTerminal("Start Bot", LocalDebugTaskResult.AppSuccess);
       } catch (error) {
         await VSBrowser.instance.takeScreenshot(getScreenshotName("debug"));
         throw new Error(error as string);
