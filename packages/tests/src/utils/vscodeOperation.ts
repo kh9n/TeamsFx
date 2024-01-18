@@ -150,7 +150,15 @@ export async function startDebugging(
   await openTerminalView();
   return await RetryHandler.retry(async () => {
     await new Workbench().executeCommand("Debug: Select and Start Debugging");
-    return await selectQuickPick(item);
+    await selectQuickPick(item);
+    try {
+      const driver = VSBrowser.instance.driver;
+      await driver.sleep(3 * Timeout.longTimeWait);
+      const dialog = new ModalDialog();
+      console.log("click deploy button");
+      await dialog.pushButton("Deploy");
+    } catch {}
+    return true;
   });
 }
 
