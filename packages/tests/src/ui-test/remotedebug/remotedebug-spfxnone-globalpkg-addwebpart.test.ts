@@ -5,7 +5,7 @@
  * @author Helly Zhang <v-helzha@microsoft.com>
  */
 import * as path from "path";
-import { InputBox, VSBrowser } from "vscode-extension-tester";
+import { InputBox, ModalDialog, VSBrowser } from "vscode-extension-tester";
 import {
   CommandPaletteCommands,
   Timeout,
@@ -83,8 +83,9 @@ describe("Remote debug Tests", function () {
       await execCommandIfExist(CommandPaletteCommands.DeployCommand);
       try {
         await driver.sleep(3 * 60 * 1000);
-        const deployConfirmInput = await InputBox.create();
-        await deployConfirmInput.confirm();
+        const dialog = new ModalDialog();
+        console.log("click deploy button");
+        await dialog.pushButton("Deploy");
       } catch (error) {
         console.log("No need to confirm to deploy.");
       }
