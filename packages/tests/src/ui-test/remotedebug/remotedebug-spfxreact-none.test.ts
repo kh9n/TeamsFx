@@ -73,6 +73,7 @@ describe("Remote debug Tests", function () {
       await clearNotifications();
       await execCommandIfExist(CommandPaletteCommands.DeployCommand);
       try {
+        await driver.sleep(3 * 60 * 1000);
         const deployConfirmInput = await InputBox.create();
         await deployConfirmInput.confirm();
       } catch (error) {
