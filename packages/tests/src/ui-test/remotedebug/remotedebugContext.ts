@@ -275,12 +275,10 @@ export async function runDeploy(
   await execCommandIfExist(CommandPaletteCommands.DeployCommand);
 
   await driver.sleep(Timeout.shortTimeWait);
-  if (!spfx) {
-    const dialog = new ModalDialog();
-    console.log("click deploy button");
-    await dialog.pushButton("Deploy");
-    await driver.sleep(waitTime);
-  }
+  const dialog = new ModalDialog();
+  console.log("click deploy button");
+  await dialog.pushButton("Deploy");
+  await driver.sleep(waitTime);
 
   try {
     await getNotification(
