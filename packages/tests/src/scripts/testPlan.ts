@@ -414,7 +414,7 @@ class ADOTestPlanClient {
       id = response.data["destinationTestPlan"]["id"];
     } catch (error) {
       console.log(error);
-      throw error;
+      // throw error;
     }
     return {
       id: id,
