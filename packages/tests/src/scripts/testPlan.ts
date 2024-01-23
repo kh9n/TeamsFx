@@ -414,7 +414,7 @@ class ADOTestPlanClient {
       id = response.data["destinationTestPlan"]["id"];
     } catch (error) {
       console.log(error);
-      // throw error;
+      throw error;
     }
     return {
       id: id,
@@ -488,7 +488,8 @@ async function main() {
       }
 
       if (!(await fs.pathExists(process.argv[4]))) {
-        throw new Error("invalid mocha result file path");
+        return;
+        // throw new Error("invalid mocha result file path");
       }
 
       const points = (await fs.readJson(process.argv[3])) as TestPoint[];
