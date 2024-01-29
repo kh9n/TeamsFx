@@ -15,20 +15,20 @@ import {
   assembleError,
   loadingDefaultPlaceholder,
   loadingOptionsPlaceholder,
+  isValidHttpUrl,
+  isTeamsFxRebrandingEnabled,
 } from "@microsoft/teamsfx-core";
-import { Localizer, VSCodeUI } from "@microsoft/vscode-ui";
+import { Localizer, VSCodeUI, InternalUIError } from "@microsoft/vscode-ui";
 import * as packageJson from "../../package.json";
-import { TerminalName } from "../constants";
+import { TerminalName, TerminalNameToBeDeprecated } from "../constants";
 import { ExtTelemetry } from "../telemetry/extTelemetry";
 import { sleep } from "../utils/commonUtils";
 import { getDefaultString, localize } from "../utils/localizeUtils";
-import { InternalUIError } from "@microsoft/vscode-ui";
 import {
   SelectFileOrInputResultType,
   TelemetryEvent,
   TelemetryProperty,
 } from "../telemetry/extTelemetryEvents";
-import { isValidHttpUrl } from "@microsoft/teamsfx-core";
 
 export class TTKLocalizer implements Localizer {
   loadingOptionsPlaceholder(): string {
@@ -80,7 +80,11 @@ export const ttkLocalizer = new TTKLocalizer();
 export class VsCodeUI extends VSCodeUI {
   context: ExtensionContext;
   constructor(context: ExtensionContext) {
-    super(TerminalName, assembleError, ttkLocalizer);
+    super(
+      isTeamsFxRebrandingEnabled() ? TerminalName : TerminalNameToBeDeprecated,
+      assembleError,
+      ttkLocalizer
+    );
     this.context = context;
   }
   async reload(): Promise<Result<boolean, FxError>> {

@@ -38,4 +38,6 @@ export const PublishAppLearnMoreLink =
 
 export const DeveloperPortalHomeLink = "https://dev.teams.microsoft.com/home";
 
-export const TerminalName = "Teams Toolkit";
+export const TerminalName = "Teams Toolkit (Rebranded)";
+
+export const TerminalNameToBeDeprecated = "Teams Toolkit";
