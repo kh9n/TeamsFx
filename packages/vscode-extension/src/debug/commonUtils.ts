@@ -9,6 +9,7 @@ import {
   envUtil,
   metadataUtil,
   pathUtils,
+  isTeamsFxRebrandingEnabled,
 } from "@microsoft/teamsfx-core";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -128,7 +129,9 @@ export async function getV3TeamsAppId(projectPath: string, env: string): Promise
   if (teamsAppId === undefined) {
     throw new UserError(
       ExtensionSource,
-      ExtensionErrors.TeamsAppIdNotFoundError,
+      isTeamsFxRebrandingEnabled()
+        ? ExtensionErrors.M365AppIdNotFoundError
+        : ExtensionErrors.TeamsAppIdNotFoundError,
       `TEAMS_APP_ID is missing in ${env} environment.`
     );
   }
