@@ -35,7 +35,6 @@ export enum ExtensionErrors {
   UpdateCodeError = "UpdateCodeError",
   UpdateCodesError = "UpdateCodesError",
   TeamsAppIdNotFoundError = "TeamsAppIdNotFoundError",
-  M365AppIdNotFoundError = "M365AppIdNotFoundError",
   TaskDefinitionError = "TaskDefinitionError",
   TaskCancelError = "TaskCancelError",
   NoTunnelServiceError = "NoTunnelServiceError",
