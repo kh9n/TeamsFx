@@ -19,6 +19,7 @@ import {
   VersionState,
   initializePreviewFeatureFlags,
   setRegion,
+  isTeamsFxRebrandingEnabled,
 } from "@microsoft/teamsfx-core";
 
 import {
@@ -100,7 +101,11 @@ export async function activate(context: vscode.ExtensionContext) {
   // UI is ready to show & interact
   await vscode.commands.executeCommand("setContext", "fx-extension.isTeamsFx", isTeamsFxProject);
 
-  void VsCodeLogInstance.info("Teams Toolkit extension is now active!");
+  if (isTeamsFxRebrandingEnabled()) {
+    void VsCodeLogInstance.info("Teams Toolkit (Rebranded) extension is now active!");
+  } else {
+    void VsCodeLogInstance.info("Teams Toolkit extension is now active!");
+  }
 
   // Don't wait this async method to let it run in background.
   void runBackgroundAsyncTasks(context, isTeamsFxProject);
