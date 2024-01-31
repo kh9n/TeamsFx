@@ -37,7 +37,6 @@ import path from "path";
 import { Executor } from "../../utils/executor";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import os from "os";
-import { assert } from "console";
 
 const debugMap: Record<LocalDebugTaskLabel, () => Promise<void>> = {
   [LocalDebugTaskLabel.StartFrontend]: async () => {
@@ -120,6 +119,7 @@ export abstract class CaseFactory {
     npmName?: string;
     skipInit?: boolean;
     skipValidation?: boolean;
+    skipDebug?: boolean;
     debug?: "cli" | "ttk";
   };
 
@@ -138,6 +138,7 @@ export abstract class CaseFactory {
       npmName?: string;
       skipInit?: boolean;
       skipValidation?: boolean;
+      skipDebug?: boolean;
       debug?: "cli" | "ttk";
     } = {}
   ) {
@@ -263,7 +264,6 @@ export abstract class CaseFactory {
       let azSqlHelper: AzSqlHelper | undefined;
       let devtunnelProcess: ChildProcessWithoutNullStreams;
       let debugProcess: ChildProcessWithoutNullStreams;
-      let tunnelName = "";
       let successFlag = true;
       let envContent = "";
       let botFlag = false;
@@ -285,29 +285,14 @@ export abstract class CaseFactory {
 
       afterEach(async function () {
         this.timeout(Timeout.finishAzureTestCase);
-        if (debugProcess) {
-          setTimeout(() => {
-            debugProcess.kill("SIGTERM");
-          }, 2000);
-        }
-
-        if (tunnelName) {
-          setTimeout(() => {
-            devtunnelProcess.kill("SIGTERM");
-          }, 2000);
-          Executor.deleteTunnel(
-            tunnelName,
-            (data) => {
-              if (data) {
-                console.log(data);
-              }
-            },
-            (error) => {
-              console.log(error);
-            }
-          );
-        }
         await onAfter(sampledebugContext, env);
+      });
+
+      after(() => {
+        if (os.type() === "Windows_NT") {
+          if (successFlag) process.exit(0);
+          else process.exit(1);
+        }
       });
 
       it(
@@ -377,13 +362,18 @@ export abstract class CaseFactory {
               },
             };
 
+            if (options?.skipDebug) {
+              console.log("skip ui skipDebug...");
+              console.log("debug finish!");
+              return;
+            }
+
+            await debugEnvMap[env]();
+            const teamsAppId = await sampledebugContext.getTeamsAppId(env);
+            expect(teamsAppId).to.not.be.empty;
+
             // if no skip init step
             if (!options?.skipInit) {
-              await debugEnvMap[env]();
-
-              const teamsAppId = await sampledebugContext.getTeamsAppId(env);
-              expect(teamsAppId).to.not.be.empty;
-
               // use 2nd middleware to process typical sample
               await onBeforeBrowerStart(sampledebugContext, env, azSqlHelper);
 
@@ -423,7 +413,6 @@ export abstract class CaseFactory {
                 const tunnel = Executor.debugBotFunctionPreparation(
                   sampledebugContext.projectPath
                 );
-                tunnelName = tunnel.tunnelName;
                 devtunnelProcess = tunnel.devtunnelProcess;
               }
               await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
@@ -438,8 +427,15 @@ export abstract class CaseFactory {
                   }
                 },
                 (error) => {
-                  console.log(error);
-                  chai.assert.fail(error);
+                  const errorMsg = error.toString();
+                  if (
+                    // skip warning messages
+                    errorMsg.includes(LocalDebugError.WarningError)
+                  ) {
+                    console.log("[skip error] ", error);
+                  } else {
+                    expect.fail(errorMsg);
+                  }
                 }
               );
               await new Promise((resolve) =>
@@ -448,9 +444,6 @@ export abstract class CaseFactory {
 
               // if no skip init step
               if (!options?.skipInit) {
-                const teamsAppId = await sampledebugContext.getTeamsAppId(env);
-                expect(teamsAppId).to.not.be.empty;
-
                 // init
                 const page = await onReopenPage(
                   sampledebugContext,
@@ -490,6 +483,11 @@ export abstract class CaseFactory {
               Timeout.playwrightDefaultTimeout
             );
           }
+
+          // kill process
+          await Executor.closeProcess(debugProcess);
+          if (botFlag) await Executor.closeProcess(devtunnelProcess);
+
           expect(successFlag, errorMessage).to.true;
           console.log("debug finish!");
         }
