@@ -179,6 +179,27 @@ export async function killPort(
   }
 }
 
+export async function initDebugPort() {
+  try {
+    await killPort(53000);
+    console.log(`close port 53000 successfully`);
+  } catch (error) {
+    console.log(`close port 53000 failed`);
+  }
+  try {
+    await killPort(3978);
+    console.log(`close port 3978 successfully`);
+  } catch (error) {
+    console.log(`close port 3978 failed`);
+  }
+  try {
+    await killPort(9239);
+    console.log(`close port 9239 successfully`);
+  } catch (error) {
+    console.log(`close port 9239 failed`);
+  }
+}
+
 export async function killNgrok(): Promise<{ stdout: string; stderr: string }> {
   if (process.platform === "win32") {
     const command = `taskkill /f /im ngrok.exe`;

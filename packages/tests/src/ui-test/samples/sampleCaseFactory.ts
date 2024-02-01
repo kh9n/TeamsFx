@@ -36,8 +36,8 @@ import fs from "fs-extra";
 import path from "path";
 import { Executor } from "../../utils/executor";
 import { ChildProcessWithoutNullStreams } from "child_process";
+import { initDebugPort } from "../../utils/commonUtils";
 import os from "os";
-import G from "glob";
 
 const debugMap: Record<LocalDebugTaskLabel, () => Promise<void>> = {
   [LocalDebugTaskLabel.StartFrontend]: async () => {
@@ -444,6 +444,7 @@ export abstract class CaseFactory {
               // kill process
               await Executor.closeProcess(debugProcess);
               if (botFlag) await Executor.closeProcess(devtunnelProcess);
+              await initDebugPort();
             }
 
             // ttk debug
