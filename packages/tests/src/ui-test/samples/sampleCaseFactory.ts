@@ -458,7 +458,7 @@ export abstract class CaseFactory {
               await onBeforeBrowerStart(sampledebugContext, env, azSqlHelper);
               // init
               let page: Page;
-              try {
+              if (options?.debug === "cli") {
                 page = await onReopenPage(sampledebugContext, teamsAppId, {
                   includeFunction: options?.includeFunction ?? false,
                   npmName: options?.npmName ?? "",
@@ -466,7 +466,7 @@ export abstract class CaseFactory {
                   type: options?.type ?? "",
                   teamsAppName: options?.teamsAppName ?? "",
                 });
-              } catch (error) {
+              } else {
                 page = await onInitPage(sampledebugContext, teamsAppId, {
                   includeFunction: options?.includeFunction ?? false,
                   npmName: options?.npmName ?? "",
