@@ -198,6 +198,18 @@ export async function initDebugPort() {
   } catch (error) {
     console.log(`close port 9239 failed`);
   }
+  try {
+    await killPort(7071);
+    console.log(`close port 7071 successfully`);
+  } catch (error) {
+    console.log(`close port 7071 failed`);
+  }
+  try {
+    await killPort(9229);
+    console.log(`close port 9229 successfully`);
+  } catch (error) {
+    console.log(`close port 9229 failed`);
+  }
 }
 
 export async function killNgrok(): Promise<{ stdout: string; stderr: string }> {
