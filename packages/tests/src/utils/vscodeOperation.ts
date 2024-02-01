@@ -210,17 +210,21 @@ export async function execCommandIfExist(
 ): Promise<void> {
   const driver = VSBrowser.instance.driver;
   await VSBrowser.instance.waitForWorkbench();
+  console.log("execute command: ", commandName);
   if (os.type() === "Darwin") {
     // command + P
+    console.log("perform command + P");
     await driver.actions().keyDown(Key.COMMAND).keyDown("P").perform();
     await driver.actions().keyUp(Key.COMMAND).keyUp("P").perform();
   } else {
+    console.log("perform ctrl + P");
     await driver.actions().keyDown(Key.CONTROL).keyDown("P").perform();
     await driver.actions().keyUp(Key.CONTROL).keyUp("P").perform();
   }
   const input = await driver.findElement(
     By.css(".quick-input-and-message .input")
   );
+  console.log("sending command...");
   await input.sendKeys(commandName);
   await driver.sleep(Timeout.input);
   const lists =
@@ -229,6 +233,7 @@ export async function execCommandIfExist(
   for (const list of lists) {
     const text = await list.getText();
     if (text.includes(commandName)) {
+      console.log("command find and execute");
       await list.click();
       await driver.sleep(500);
       console.log("[execCommand]: ", commandName);

@@ -13,7 +13,7 @@ import {
   LocalDebugTaskResult,
   LocalDebugError,
 } from "../../utils/constants";
-import { waitForTerminal } from "../../utils/vscodeOperation";
+import { waitForTerminal, stopDebugging } from "../../utils/vscodeOperation";
 import {
   debugInitMap,
   initPage,
@@ -400,6 +400,7 @@ export abstract class CaseFactory {
                 console.log("skip ui skipValidation...");
                 console.log("debug finish!");
               }
+              await stopDebugging();
             } else {
               console.log("skip ui skipInit...");
               console.log("debug finish!");
