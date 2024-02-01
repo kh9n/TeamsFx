@@ -66,7 +66,7 @@ describe("Local Debug Tests", function () {
           localDebugTestContext.testRootFolder,
           localDebugTestContext.appName
         );
-        validateFileExist(projectPath, "index.ts");
+        validateFileExist(projectPath, "index.js");
 
         // local debug
         console.log("======= debug with ttk ========");
