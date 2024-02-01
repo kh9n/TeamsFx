@@ -456,15 +456,25 @@ export abstract class CaseFactory {
             if (!options?.skipInit) {
               // use 2nd middleware to process typical sample
               await onBeforeBrowerStart(sampledebugContext, env, azSqlHelper);
-
               // init
-              const page = await onReopenPage(sampledebugContext, teamsAppId, {
-                includeFunction: options?.includeFunction ?? false,
-                npmName: options?.npmName ?? "",
-                dashboardFlag: options?.dashboardFlag ?? false,
-                type: options?.type ?? "",
-                teamsAppName: options?.teamsAppName ?? "",
-              });
+              let page: Page;
+              if (options?.debug === "cli") {
+                page = await onReopenPage(sampledebugContext, teamsAppId, {
+                  includeFunction: options?.includeFunction ?? false,
+                  npmName: options?.npmName ?? "",
+                  dashboardFlag: options?.dashboardFlag ?? false,
+                  type: options?.type ?? "",
+                  teamsAppName: options?.teamsAppName ?? "",
+                });
+              } else {
+                page = await onInitPage(sampledebugContext, teamsAppId, {
+                  includeFunction: options?.includeFunction ?? false,
+                  npmName: options?.npmName ?? "",
+                  dashboardFlag: options?.dashboardFlag ?? false,
+                  type: options?.type ?? "",
+                  teamsAppName: options?.teamsAppName ?? "",
+                });
+              }
 
               // if no skip vaildation
               if (!options?.skipValidation) {
