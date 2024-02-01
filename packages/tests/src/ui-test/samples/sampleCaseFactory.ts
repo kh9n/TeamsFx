@@ -37,6 +37,7 @@ import path from "path";
 import { Executor } from "../../utils/executor";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import os from "os";
+import G from "glob";
 
 const debugMap: Record<LocalDebugTaskLabel, () => Promise<void>> = {
   [LocalDebugTaskLabel.StartFrontend]: async () => {
