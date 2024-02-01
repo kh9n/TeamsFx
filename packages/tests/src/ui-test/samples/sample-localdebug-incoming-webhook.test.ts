@@ -36,5 +36,5 @@ new IncomingWebhookTestCase(
   "v-ivanchen@microsoft.com",
   "local",
   [LocalDebugTaskLabel.StartWebhook],
-  { skipInit: true }
+  { skipDebug: true }
 ).test();
