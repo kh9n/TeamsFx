@@ -192,6 +192,7 @@ export async function stopDebugging(): Promise<void> {
     await execCommandIfExist("Debug: Stop", Timeout.closeDebugWindow);
     await execCommandIfExist("Debug: Disconnect", Timeout.closeDebugWindow);
   } catch (error) {
+    await VSBrowser.instance.takeScreenshot(getScreenshotName("stopDebugging"));
     console.log("Failed to stop debugging");
   }
 }
