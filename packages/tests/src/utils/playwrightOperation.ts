@@ -126,7 +126,7 @@ export async function initPage(
   ]);
 
   // input username
-  await RetryHandler.retry(async () => {
+  try {
     await page.fill("input.input[type='email']", username);
     console.log(`fill in username ${username}`);
 
@@ -135,16 +135,14 @@ export async function initPage(
       page.click("input.button[type='submit']"),
       page.waitForNavigation(),
     ]);
-  });
+  } catch (error) {
+    console.log("skip error:", error);
+  }
 
   try {
     // input password
     console.log(`fill in password`);
     await page.fill("input.input[type='password'][name='passwd']", password);
-  } catch (error) {
-    console.log("skip error:", error);
-  }
-  try {
     // sign in
     await Promise.all([
       page.click("input.button[type='submit']"),
@@ -291,7 +289,7 @@ export async function initTeamsPage(
     ]);
 
     // input username
-    await RetryHandler.retry(async () => {
+    try {
       await page.fill("input.input[type='email']", username);
       console.log(`fill in username ${username}`);
 
@@ -300,16 +298,14 @@ export async function initTeamsPage(
         page.click("input.button[type='submit']"),
         page.waitForNavigation(),
       ]);
-    });
+    } catch (error) {
+      console.log("skip error:", error);
+    }
 
     try {
       // input password
       console.log(`fill in password`);
       await page.fill("input.input[type='password'][name='passwd']", password);
-    } catch (error) {
-      console.log("skip error:", error);
-    }
-    try {
       // sign in
       await Promise.all([
         page.click("input.button[type='submit']"),
