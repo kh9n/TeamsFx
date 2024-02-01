@@ -291,52 +291,61 @@ export async function reopenPage(
     await page.waitForTimeout(Timeout.longTimeWait);
     console.log("click add button");
 
-    const frameElementHandle = await page.waitForSelector(
-      "iframe.embedded-page-content"
-    );
-    const frame = await frameElementHandle?.contentFrame();
-    const addBtn = await frame?.waitForSelector("button>span:has-text('Add')");
-
-    // dashboard template will have a popup
-    if (options?.dashboardFlag) {
-      console.log("Before popup");
-      const [popup] = await Promise.all([
-        page
-          .waitForEvent("popup")
-          .then((popup) =>
-            popup
-              .waitForEvent("close", {
-                timeout: Timeout.playwrightConsentPopupPage,
-              })
-              .catch(() => popup)
-          )
-          .catch(() => {}),
-        addBtn?.click(),
-      ]);
-      console.log("after popup");
-
-      if (popup && !popup?.isClosed()) {
-        // input password
-        console.log(`fill in password`);
-        await popup.fill(
-          "input.input[type='password'][name='passwd']",
-          password
-        );
-        // sign in
-        await Promise.all([
-          popup.click("input.button[type='submit'][value='Sign in']"),
-          popup.waitForNavigation(),
+    try {
+      const frameElementHandle = await page.waitForSelector(
+        "iframe.embedded-page-content"
+      );
+      const frame = await frameElementHandle?.contentFrame();
+      const addBtn = await frame?.waitForSelector(
+        "button>span:has-text('Add')"
+      );
+      // dashboard template will have a popup
+      if (options?.dashboardFlag) {
+        console.log("Before popup");
+        const [popup] = await Promise.all([
+          page
+            .waitForEvent("popup")
+            .then((popup) =>
+              popup
+                .waitForEvent("close", {
+                  timeout: Timeout.playwrightConsentPopupPage,
+                })
+                .catch(() => popup)
+            )
+            .catch(() => {}),
+          addBtn?.click(),
         ]);
-        await popup.click("input.button[type='submit'][value='Accept']");
+        console.log("after popup");
+        if (popup && !popup?.isClosed()) {
+          // input password
+          console.log(`fill in password`);
+          await popup.fill(
+            "input.input[type='password'][name='passwd']",
+            password
+          );
+          // sign in
+          await Promise.all([
+            popup.click("input.button[type='submit'][value='Sign in']"),
+            popup.waitForNavigation(),
+          ]);
+          await popup.click("input.button[type='submit'][value='Accept']");
+        }
+      } else {
+        await addBtn?.click();
       }
-    } else {
-      await addBtn?.click();
+      await page.waitForTimeout(Timeout.shortTimeLoading);
+      // verify add page is closed
+      await frame?.waitForSelector("button>span:has-text('Add')", {
+        state: "detached",
+      });
+    } catch (error) {
+      await page.screenshot({
+        path: getPlaywrightScreenshotPath("add_error"),
+        fullPage: true,
+      });
+      assert.fail("[Error] add app failed");
     }
-    await page.waitForTimeout(Timeout.shortTimeLoading);
-    // verify add page is closed
-    await frame?.waitForSelector("button>span:has-text('Add')", {
-      state: "detached",
-    });
+
     try {
       try {
         await page?.waitForSelector(".team-information span:has-text('About')");
@@ -360,7 +369,7 @@ export async function reopenPage(
       console.log("[success] app loaded");
     } catch (error) {
       await page.screenshot({
-        path: getPlaywrightScreenshotPath("error"),
+        path: getPlaywrightScreenshotPath("load_error"),
         fullPage: true,
       });
       assert.fail("[Error] add app failed");
