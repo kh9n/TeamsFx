@@ -12,27 +12,7 @@ import { CaseFactory } from "./sampleCaseFactory";
 import { Env } from "../../utils/env";
 import { SampledebugContext } from "./sampledebugContext";
 
-class MyFirstMettingTestCase extends CaseFactory {
-  public override async onInitPage(
-    sampledebugContext: SampledebugContext,
-    teamsAppId: string,
-    options?: {
-      teamsAppName: string;
-      type: string;
-    }
-  ): Promise<Page> {
-    return await initTeamsPage(
-      sampledebugContext.context!,
-      teamsAppId,
-      Env.username,
-      Env.password,
-      {
-        teamsAppName: options?.teamsAppName,
-        type: options?.type,
-      }
-    );
-  }
-}
+class MyFirstMettingTestCase extends CaseFactory {}
 
 new MyFirstMettingTestCase(
   TemplateProject.MyFirstMetting,

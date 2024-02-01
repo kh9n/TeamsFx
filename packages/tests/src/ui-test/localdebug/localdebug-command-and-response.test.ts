@@ -11,11 +11,7 @@ import {
   stopDebugging,
   waitForTerminal,
 } from "../../utils/vscodeOperation";
-import {
-  initPage,
-  validateBot,
-  reopenPage,
-} from "../../utils/playwrightOperation";
+import { initPage, validateBot } from "../../utils/playwrightOperation";
 import { LocalDebugTestContext } from "./localdebugContext";
 import {
   Timeout,
@@ -32,7 +28,6 @@ import { Executor } from "../../utils/executor";
 import { expect } from "chai";
 import { getScreenshotName } from "../../utils/nameUtil";
 import os from "os";
-import mocha from "mocha";
 
 // TODO: Change preview test to normal test before rc release
 describe("Command And Response Bot Local Debug Tests", function () {
@@ -154,7 +149,7 @@ describe("Command And Response Bot Local Debug Tests", function () {
         devtunnelProcess = res.devtunnelProcess;
         debugProcess = res.debugProcess;
         {
-          const page = await reopenPage(
+          const page = await initPage(
             localDebugTestContext.context!,
             teamsAppId,
             Env.username,

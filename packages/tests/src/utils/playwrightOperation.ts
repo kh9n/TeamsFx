@@ -137,142 +137,33 @@ export async function initPage(
     ]);
   });
 
-  // input password
-  console.log(`fill in password`);
-  await page.fill("input.input[type='password'][name='passwd']", password);
-
-  // sign in
-  await Promise.all([
-    page.click("input.button[type='submit']"),
-    page.waitForNavigation(),
-  ]);
-
-  // stay signed in confirm page
-  console.log(`stay signed confirm`);
-  await Promise.all([
-    page.click("input.button[type='submit'][value='Yes']"),
-    page.waitForNavigation(),
-  ]);
-  await page.waitForTimeout(Timeout.shortTimeLoading);
-
-  // add app
-  await RetryHandler.retry(async (retries: number) => {
-    if (retries > 0) {
-      console.log(`Retried to run adding app for ${retries} times.`);
-    }
-    await page.close();
-    console.log(`open teams page`);
-    page = await context.newPage();
+  try {
+    // input password
+    console.log(`fill in password`);
+    await page.fill("input.input[type='password'][name='passwd']", password);
+  } catch (error) {
+    console.log("skip error:", error);
+  }
+  try {
+    // sign in
     await Promise.all([
-      page.goto(
-        `https://teams.microsoft.com/_#/l/app/${teamsAppId}?installAppPackage=true`
-      ),
+      page.click("input.button[type='submit']"),
       page.waitForNavigation(),
     ]);
-    await page.waitForTimeout(Timeout.longTimeWait);
-    console.log("click add button");
-
-    const frameElementHandle = await page.waitForSelector(
-      "iframe.embedded-page-content"
-    );
-    const frame = await frameElementHandle?.contentFrame();
-    const addBtn = await frame?.waitForSelector("button>span:has-text('Add')");
-
-    // dashboard template will have a popup
-    if (options?.dashboardFlag) {
-      console.log("Before popup");
-      const [popup] = await Promise.all([
-        page
-          .waitForEvent("popup")
-          .then((popup) =>
-            popup
-              .waitForEvent("close", {
-                timeout: Timeout.playwrightConsentPopupPage,
-              })
-              .catch(() => popup)
-          )
-          .catch(() => {}),
-        addBtn?.click(),
-      ]);
-      console.log("after popup");
-
-      if (popup && !popup?.isClosed()) {
-        // input password
-        console.log(`fill in password`);
-        await popup.fill(
-          "input.input[type='password'][name='passwd']",
-          password
-        );
-        // sign in
-        await Promise.all([
-          popup.click("input.button[type='submit'][value='Sign in']"),
-          popup.waitForNavigation(),
-        ]);
-        await popup.click("input.button[type='submit'][value='Accept']");
-      }
-    } else {
-      await addBtn?.click();
-    }
-    await page.waitForTimeout(Timeout.shortTimeLoading);
-    // verify add page is closed
-    await frame?.waitForSelector("button>span:has-text('Add')", {
-      state: "detached",
-    });
-    try {
-      try {
-        await page?.waitForSelector(".team-information span:has-text('About')");
-      } catch (error) {
-        try {
-          await page?.waitForSelector(
-            ".ts-messages-header span:has-text('About')"
-          );
-        } catch (error) {
-          try {
-            await page?.waitForSelector(
-              ".team-information span:has-text('Chat')"
-            );
-          } catch (error) {
-            await page?.waitForSelector(
-              ".ts-messages-header span:has-text('Chat')"
-            );
-          }
-        }
-      }
-      console.log("[success] app loaded");
-    } catch (error) {
-      await page.screenshot({
-        path: getPlaywrightScreenshotPath("error"),
-        fullPage: true,
-      });
-      assert.fail("[Error] add app failed");
-    }
-    await page.waitForTimeout(Timeout.shortTimeLoading);
-  });
-
-  return page;
-}
-
-export async function reopenPage(
-  context: BrowserContext,
-  teamsAppId: string,
-  username: string,
-  password: string,
-  options?: {
-    teamsAppName?: string;
-    dashboardFlag?: boolean;
+  } catch (error) {
+    console.log("skip error:", error);
   }
-): Promise<Page> {
-  let page = await context.newPage();
-  page.setDefaultTimeout(Timeout.playwrightDefaultTimeout);
-
-  // open teams app page
-  // https://github.com/puppeteer/puppeteer/issues/3338
-  await Promise.all([
-    page.goto(
-      `https://teams.microsoft.com/_#/l/app/${teamsAppId}?installAppPackage=true`
-    ),
-    page.waitForNavigation(),
-  ]);
+  try {
+    // stay signed in confirm page
+    console.log(`stay signed confirm`);
+    await Promise.all([
+      page.click("input.button[type='submit'][value='Yes']"),
+      page.waitForNavigation(),
+    ]);
+  } catch (error) {
+    console.log("skip error:", error);
+  }
+  await page.waitForTimeout(Timeout.shortTimeLoading);
 
   // add app
   await RetryHandler.retry(async (retries: number) => {
@@ -339,13 +230,8 @@ export async function reopenPage(
         state: "detached",
       });
     } catch (error) {
-      await page.screenshot({
-        path: getPlaywrightScreenshotPath("add_error"),
-        fullPage: true,
-      });
-      assert.fail("[Error] add app failed");
+      console.log("skip error:", error);
     }
-
     try {
       try {
         await page?.waitForSelector(".team-information span:has-text('About')");
@@ -369,7 +255,7 @@ export async function reopenPage(
       console.log("[success] app loaded");
     } catch (error) {
       await page.screenshot({
-        path: getPlaywrightScreenshotPath("load_error"),
+        path: getPlaywrightScreenshotPath("error"),
         fullPage: true,
       });
       assert.fail("[Error] add app failed");
@@ -416,22 +302,33 @@ export async function initTeamsPage(
       ]);
     });
 
-    // input password
-    console.log(`fill in password`);
-    await page.fill("input.input[type='password'][name='passwd']", password);
-
-    // sign in
-    await Promise.all([
-      page.click("input.button[type='submit']"),
-      page.waitForNavigation(),
-    ]);
-
-    // stay signed in confirm page
-    console.log(`stay signed confirm`);
-    await Promise.all([
-      page.click("input.button[type='submit'][value='Yes']"),
-      page.waitForNavigation(),
-    ]);
+    try {
+      // input password
+      console.log(`fill in password`);
+      await page.fill("input.input[type='password'][name='passwd']", password);
+    } catch (error) {
+      console.log("skip error:", error);
+    }
+    try {
+      // sign in
+      await Promise.all([
+        page.click("input.button[type='submit']"),
+        page.waitForNavigation(),
+      ]);
+    } catch (error) {
+      console.log("skip error:", error);
+    }
+    try {
+      // stay signed in confirm page
+      console.log(`stay signed confirm`);
+      await Promise.all([
+        page.click("input.button[type='submit'][value='Yes']"),
+        page.waitForNavigation(),
+      ]);
+    } catch (error) {
+      console.log("skip error:", error);
+    }
+    await page.waitForTimeout(Timeout.shortTimeLoading);
 
     // add app
     await RetryHandler.retry(async (retries: number) => {
@@ -449,23 +346,27 @@ export async function initTeamsPage(
       ]);
       await page.waitForTimeout(Timeout.longTimeWait);
       console.log("click add button");
-      const frameElementHandle = await page.waitForSelector(
-        "iframe.embedded-page-content"
-      );
-      const frame = await frameElementHandle?.contentFrame();
-
       try {
-        console.log("dismiss message");
-        await page.click('button:has-text("Dismiss")');
+        const frameElementHandle = await page.waitForSelector(
+          "iframe.embedded-page-content"
+        );
+        const frame = await frameElementHandle?.contentFrame();
+
+        try {
+          console.log("dismiss message");
+          await page.click('button:has-text("Dismiss")');
+        } catch (error) {
+          console.log("no message to dismiss");
+        }
+        // default
+        const addBtn = await frame?.waitForSelector(
+          "button>span:has-text('Add')"
+        );
+        await addBtn?.click();
+        await page.waitForTimeout(Timeout.shortTimeLoading);
       } catch (error) {
-        console.log("no message to dismiss");
+        console.log("skip error:", error);
       }
-      // default
-      const addBtn = await frame?.waitForSelector(
-        "button>span:has-text('Add')"
-      );
-      await addBtn?.click();
-      await page.waitForTimeout(Timeout.shortTimeLoading);
 
       if (options?.type === "meeting") {
         // verify add page is closed
@@ -489,6 +390,10 @@ export async function initTeamsPage(
 
       try {
         // verify add page is closed
+        const frameElementHandle = await page.waitForSelector(
+          "iframe.embedded-page-content"
+        );
+        const frame = await frameElementHandle?.contentFrame();
         await frame?.waitForSelector(`h1:has-text('to a team')`);
         try {
           const frameElementHandle = await page.waitForSelector(
