@@ -11,7 +11,11 @@ import {
   stopDebugging,
   waitForTerminal,
 } from "../../utils/vscodeOperation";
-import { initPage, validateBot } from "../../utils/playwrightOperation";
+import {
+  initPage,
+  validateBot,
+  reopenPage,
+} from "../../utils/playwrightOperation";
 import { LocalDebugTestContext } from "./localdebugContext";
 import {
   Timeout,
@@ -149,7 +153,7 @@ describe("Command And Response Bot Local Debug Tests", function () {
         devtunnelProcess = res.devtunnelProcess;
         debugProcess = res.debugProcess;
         {
-          const page = await initPage(
+          const page = await reopenPage(
             localDebugTestContext.context!,
             teamsAppId,
             Env.username,

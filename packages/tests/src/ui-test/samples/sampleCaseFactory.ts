@@ -18,6 +18,8 @@ import {
   debugInitMap,
   initPage,
   initTeamsPage,
+  reopenPage,
+  reopenTeamsPage,
 } from "../../utils/playwrightOperation";
 import { Env } from "../../utils/env";
 import { SampledebugContext } from "./sampledebugContext";
@@ -223,6 +225,39 @@ export abstract class CaseFactory {
     }
   }
 
+  public async onReopenPage(
+    sampledebugContext: SampledebugContext,
+    teamsAppId: string,
+    options?: {
+      teamsAppName: string;
+      includeFunction: boolean;
+      npmName: string;
+      dashboardFlag: boolean;
+      type: string;
+    }
+  ): Promise<Page> {
+    if (options?.type === "meeting") {
+      return await reopenTeamsPage(
+        sampledebugContext.context!,
+        teamsAppId,
+        Env.username,
+        Env.password,
+        {
+          teamsAppName: options?.teamsAppName,
+          type: options?.type,
+        }
+      );
+    } else {
+      return await reopenPage(
+        sampledebugContext.context!,
+        teamsAppId,
+        Env.username,
+        Env.password,
+        { dashboardFlag: options?.dashboardFlag }
+      );
+    }
+  }
+
   public async onValidate(
     page: Page,
     options?: {
@@ -250,6 +285,7 @@ export abstract class CaseFactory {
       onBeforeBrowerStart,
       onInitPage,
       onValidate,
+      onReopenPage,
     } = this;
     describe("Sample Tests", function () {
       this.timeout(Timeout.testAzureCase);
@@ -449,13 +485,24 @@ export abstract class CaseFactory {
               // use 2nd middleware to process typical sample
               await onBeforeBrowerStart(sampledebugContext, env, azSqlHelper);
               // init
-              const page = await onInitPage(sampledebugContext, teamsAppId, {
-                includeFunction: options?.includeFunction ?? false,
-                npmName: options?.npmName ?? "",
-                dashboardFlag: options?.dashboardFlag ?? false,
-                type: options?.type ?? "",
-                teamsAppName: options?.teamsAppName ?? "",
-              });
+              let page: Page;
+              if (options?.debug === "cli") {
+                page = await onReopenPage(sampledebugContext, teamsAppId, {
+                  includeFunction: options?.includeFunction ?? false,
+                  npmName: options?.npmName ?? "",
+                  dashboardFlag: options?.dashboardFlag ?? false,
+                  type: options?.type ?? "",
+                  teamsAppName: options?.teamsAppName ?? "",
+                });
+              } else {
+                page = await onInitPage(sampledebugContext, teamsAppId, {
+                  includeFunction: options?.includeFunction ?? false,
+                  npmName: options?.npmName ?? "",
+                  dashboardFlag: options?.dashboardFlag ?? false,
+                  type: options?.type ?? "",
+                  teamsAppName: options?.teamsAppName ?? "",
+                });
+              }
 
               // if no skip vaildation
               if (!options?.skipValidation) {

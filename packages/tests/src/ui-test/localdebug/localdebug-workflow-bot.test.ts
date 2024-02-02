@@ -15,6 +15,7 @@ import {
   initPage,
   validateBot,
   validateWorkFlowBot,
+  reopenPage,
 } from "../../utils/playwrightOperation";
 import { LocalDebugTestContext } from "./localdebugContext";
 import {
@@ -152,7 +153,7 @@ describe("Workflow Bot Local Debug Tests", function () {
         devtunnelProcess = res.devtunnelProcess;
         debugProcess = res.debugProcess;
         {
-          const page = await initPage(
+          const page = await reopenPage(
             localDebugTestContext.context!,
             teamsAppId,
             Env.username,

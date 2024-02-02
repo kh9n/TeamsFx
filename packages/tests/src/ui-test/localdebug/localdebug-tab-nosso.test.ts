@@ -6,7 +6,11 @@
  */
 import * as path from "path";
 import { startDebugging, waitForTerminal } from "../../utils/vscodeOperation";
-import { initPage, validateBasicTab } from "../../utils/playwrightOperation";
+import {
+  initPage,
+  validateBasicTab,
+  reopenPage,
+} from "../../utils/playwrightOperation";
 import { LocalDebugTestContext } from "./localdebugContext";
 import {
   Timeout,
@@ -87,7 +91,7 @@ describe("Local Debug Tests", function () {
         const res = await Executor.cliPreview(projectPath, false);
         debugProcess = res.debugProcess;
         {
-          const page = await initPage(
+          const page = await reopenPage(
             localDebugTestContext.context!,
             teamsAppId,
             Env.username,
