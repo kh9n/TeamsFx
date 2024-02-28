@@ -127,6 +127,9 @@ export class SlashCommandsOwner implements IAgentRequestHandler {
   }
 
   public getFollowUpForLastHandledSlashCommand(result: vscode.ChatResult, _token: vscode.CancellationToken): vscode.ChatFollowup[] | undefined {
+    if (this._previousSlashCommandHandlerResult?.chatAgentResult.slashCommand === "create") {
+      result = this._previousSlashCommandHandlerResult?.chatAgentResult;
+    }
     if (result === this._previousSlashCommandHandlerResult?.chatAgentResult) {
       const followUpForLastHandledSlashCommand = this._previousSlashCommandHandlerResult?.followUp;
       this._previousSlashCommandHandlerResult = undefined;

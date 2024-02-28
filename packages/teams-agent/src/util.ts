@@ -260,3 +260,78 @@ export function isValidProjectV3(workspacePath: string): boolean {
   }
   return false;
 }
+
+export async function modifyFile(filePath: string, generatedCode: string) {
+  const tsfilePath = path.join(filePath, "src", "taskpane", "taskpane.ts");
+  const htmlFilePath = path.join(filePath, "src", "taskpane", "taskpane.html");
+  const tsFileUri = vscode.Uri.file(tsfilePath);
+  const htmlFileUri = vscode.Uri.file(htmlFilePath);
+
+  try {
+    // Read the file
+    const tsFileData = await vscode.workspace.fs.readFile(tsFileUri);
+    let tsFileContent = tsFileData.toString();
+    const htmlFileData = await vscode.workspace.fs.readFile(htmlFileUri);
+    let htmlFileContent = htmlFileData.toString();
+
+    // Modify the file content
+    const runFunctionStart = tsFileContent.indexOf('export async function run()');
+    const runFunctionEnd = tsFileContent.lastIndexOf('}');
+    const runFunction = tsFileContent.slice(runFunctionStart, runFunctionEnd + 1);
+    let modifiedTsContent = tsFileContent;
+    if (runFunctionStart !== -1) {
+      modifiedTsContent = tsFileContent.replace(runFunction, generatedCode);
+    } else {
+      modifiedTsContent = tsFileContent + generatedCode;
+    }
+
+    let modifiedHtmlContent = htmlFileContent;
+
+    const functionRegex = /function (\w+)/g;
+    const newFunctionNames = generatedCode.match(functionRegex)?.map(func => func.replace('function ', '')) ?? [];
+
+    for (var newFunctionName of newFunctionNames) {
+      const mapStartIndex = modifiedTsContent.indexOf(`document.getElementById("run").onclick = run`);
+      const mapEndIndex = mapStartIndex + `document.getElementById("run").onclick = run`.length;
+      const map = modifiedTsContent.slice(mapStartIndex, mapEndIndex);
+
+      const buttonStartIndex = modifiedHtmlContent.indexOf('<div role="button" id="run"');
+      const buttonEndIndex = modifiedHtmlContent.indexOf('</div>', buttonStartIndex) + '</div>'.length;
+      const button = modifiedHtmlContent.slice(buttonStartIndex, buttonEndIndex);
+      if (mapStartIndex !== -1) {
+        modifiedTsContent = modifiedTsContent.replace(map, `document.getElementById("${newFunctionName}").onclick = ${newFunctionName}`);
+      }
+      else {
+        const lastOnClickStartIndex = modifiedTsContent.lastIndexOf('onclick');
+        const lastOnClickEndIndex = modifiedTsContent.indexOf(';\n', lastOnClickStartIndex) + ';\n'.length;
+        const before = modifiedTsContent.slice(0, lastOnClickEndIndex);
+        const after = modifiedTsContent.slice(lastOnClickEndIndex);
+        const newLine = `    document.getElementById("${newFunctionName}").onclick = ${newFunctionName};\n`;
+        modifiedTsContent = before + newLine + after;
+      }
+
+      const newButtonCodeBlock = `
+      <div role="button" id="${newFunctionName}" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
+          <span class="ms-Button-label">${newFunctionName}</span>
+      </div>
+      `
+      if (buttonStartIndex !== -1) {
+        modifiedHtmlContent = modifiedHtmlContent.replace(button, newButtonCodeBlock);
+      }
+      else {
+        const lastButtonStartIndex = modifiedHtmlContent.lastIndexOf('<div role="button"');
+        const lastButtonEndIndex = modifiedHtmlContent.indexOf('</div>\n', lastButtonStartIndex) + + '</div>\n'.length;
+        const before = modifiedHtmlContent.slice(0, lastButtonEndIndex);
+        const after = modifiedHtmlContent.slice(lastButtonEndIndex);
+        modifiedHtmlContent = before + newButtonCodeBlock + '\n' + after;
+      }
+    }
+
+    // Write the modified content back to the file
+    const encoder = new TextEncoder();
+    await vscode.workspace.fs.writeFile(tsFileUri, encoder.encode(modifiedTsContent));
+    await vscode.workspace.fs.writeFile(htmlFileUri, encoder.encode(modifiedHtmlContent));
+  } catch (error) {
+    console.error(`Failed to modify file: ${error}`);
+  }
+}

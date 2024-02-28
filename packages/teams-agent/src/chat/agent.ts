@@ -15,6 +15,9 @@ import {
   getCreateCommand,
 } from "../subCommand/createSlashCommand";
 import {
+  getFixCommand
+} from '../subCommand/fixSlashCommand';
+import {
   getAgentHelpCommand,
   helpCommandName,
 } from "../subCommand/helpSlashCommand";
@@ -30,6 +33,9 @@ import {
   agentFullName,
   agentName,
   maxFollowUps,
+  wxpAgentDescription,
+  wxpAgentFullName,
+  wxpAgentName,
 } from "./agentConsts";
 import {
   LanguageModelID,
@@ -82,6 +88,7 @@ const agentSlashCommandsOwner = new SlashCommandsOwner(
 agentSlashCommandsOwner.addInvokeableSlashCommands(
   new Map([
     getCreateCommand(),
+    getFixCommand(),
     getNextStepCommand(),
     getAgentHelpCommand(agentSlashCommandsOwner),
     getTestCommand(),
@@ -101,7 +108,18 @@ export function registerChatAgent() {
     );
     participant.commandProvider = { provideCommands: getCommands };
     participant.followupProvider = { provideFollowups: followUpProvider };
-    registerVSCodeCommands(participant);
+    const wxpParticipant = vscode.chat.createChatParticipant(wxpAgentName, handler);
+    wxpParticipant.description = wxpAgentDescription;
+    wxpParticipant.fullName = wxpAgentFullName;
+    wxpParticipant.iconPath = vscode.Uri.joinPath(
+      ext.context.extensionUri,
+      "resources",
+      "M365.png"
+    );
+    wxpParticipant.commandProvider = { provideCommands: getCommands };
+    wxpParticipant.followupProvider = { provideFollowups: followUpProvider };
+    registerVSCodeCommands(participant, wxpParticipant);
+    // registerVSCodeCommands(participant);
   } catch (e) {
     console.log(e);
   }
@@ -160,6 +178,7 @@ function followUpProvider(
 }
 
 function getCommands(
+  context: vscode.ChatContext,
   _token: vscode.CancellationToken
 ): vscode.ProviderResult<vscode.ChatCommand[]> {
   return agentSlashCommandsOwner.getSlashCommands().map(([name, config]) => ({
@@ -187,9 +206,10 @@ async function defaultHandler(
   }
 }
 
-function registerVSCodeCommands(participant: vscode.ChatParticipant) {
+function registerVSCodeCommands(participant: vscode.ChatParticipant, participant2: vscode.ChatParticipant) {
   ext.context.subscriptions.push(
     participant,
+    participant2,
     vscode.commands.registerCommand(CREATE_SAMPLE_COMMAND_ID, createCommand),
     vscode.commands.registerCommand(EXECUTE_COMMAND_ID, executeCommand)
   );

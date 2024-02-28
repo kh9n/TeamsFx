@@ -22,6 +22,7 @@
     "chatParticipantAdditions",
     "chatProvider",
     "chatVariableResolver",
+    "defaultChatParticipant",
     "languageModels"
   ],
   "main": "./out/extension.js",
