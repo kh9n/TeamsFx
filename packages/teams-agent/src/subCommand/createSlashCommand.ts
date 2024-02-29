@@ -66,28 +66,28 @@ async function createHandler(request: AgentRequest): Promise<SlashCommandHandler
         // } catch (e: any) {
         //   throw new Error("OfficeAddinGenerator " + e);
         // }
-        const ObjArrayWithApis = (responseJson.PLATFORM === 'Word') ? await import("./APIsWithDesciption_Word_v2_CC_Comment.json") : await import("./APIsWithDescription_Excel_Chart.json");
-        var objApisMap = new Map();
-        for (var idx in ObjArrayWithApis) {
-          const objAndApiListJson = ObjArrayWithApis[idx];
-          const keys = Object.keys(objAndApiListJson.apiList);
-          objApisMap.set(objAndApiListJson.object.toLowerCase(), JSON.stringify(keys));
-        }
+        // const ObjArrayWithApis = (responseJson.PLATFORM === 'Word') ? await import("./APIsWithDesciption_Word_v2_CC_Comment.json") : await import("./APIsWithDescription_Excel_Chart.json");
+        // var objApisMap = new Map();
+        // for (var idx in ObjArrayWithApis) {
+        //   const objAndApiListJson = ObjArrayWithApis[idx];
+        //   const keys = Object.keys(objAndApiListJson.apiList);
+        //   objApisMap.set(objAndApiListJson.object.toLowerCase(), JSON.stringify(keys));
+        // }
         const apiObjectsStr = Array.isArray(responseJson.APISET) ? responseJson.APISET.map((api: string) => `${api}`).join(", ") : '';
-        var objsFromResponse = Array.isArray(responseJson.APISET) ? Array.from(responseJson.APISET) : [];
-        request.response.markdown(`${responseJson.SUMMARY}\n`);
+        // var objsFromResponse = Array.isArray(responseJson.APISET) ? Array.from(responseJson.APISET) : [];
+        // request.response.markdown(`${responseJson.SUMMARY}\n`);
 
-        //var objsFromResponseSet = new Set(objsFromResponse);
-        var apiListStr = ""
-        for (var objFromResponseIdx in objsFromResponse) {
-          var objFromResponse = objsFromResponse[objFromResponseIdx].toLowerCase();
-          if (objApisMap.has(objFromResponse)) {
-            const apiList = objApisMap.get(objFromResponse);
-            apiListStr += objApisMap.get(objFromResponse) + ",";
-            console.log("apiListStr " + apiListStr);
-          }
-        }
-        let codeMath = "";;
+        // //var objsFromResponseSet = new Set(objsFromResponse);
+        // var apiListStr = ""
+        // for (var objFromResponseIdx in objsFromResponse) {
+        //   var objFromResponse = objsFromResponse[objFromResponseIdx].toLowerCase();
+        //   if (objApisMap.has(objFromResponse)) {
+        //     const apiList = objApisMap.get(objFromResponse);
+        //     apiListStr += objApisMap.get(objFromResponse) + ",";
+        //     console.log("apiListStr " + apiListStr);
+        //   }
+        // }
+        let codeMath = "";
         const generateCodePrompt = `
         # Role
         I want you act as an expert in Office JavaScript add-in development area. You are also an advisor for Office add-in developers.
