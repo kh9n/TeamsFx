@@ -21,6 +21,7 @@ import {
   getCreateCommand,
 } from "../subCommand/createSlashCommand";
 import {
+  fixErrorCode,
   getFixCommand
 } from '../subCommand/fixSlashCommand';
 import {
@@ -208,8 +209,9 @@ async function defaultHandler(
   let isFileExist = await fileExists(tsfilePath);
   const lastResponse = getLastResponse(request);
   const tmpTxtPath = path.join(srcRoot, 'tmp.txt');
+  const intention = await analyzeIntention(request);
   // console.log("defaultTargetFolder: " + defaultTargetFolder);
-  if (request.userPrompt.toLocaleLowerCase().match(regex)) {
+  if (intention.includes('generate code')) {
     const objectJson = '{"Annotation":"Represents an annotation attached to a paragraph.","AnnotationCollection":"Contains a collection of Annotation objects.","Body":"Represents the body of a document or a section.","Border":"Represents the Border object for text, a paragraph, or a table.","BorderCollection":"Represents the collection of border styles.","CheckboxContentControl":"The data specific to content controls of type CheckBox.","Comment":"Represents a comment in the document.","CommentCollection":"Contains a collection of Comment objects.","CommentContentRange":"Specifies the comment\'s content range.","CommentReply":"Represents a comment reply in the document.","CommentReplyCollection":"Contains a collection of CommentReply objects. Represents all comment replies in one comment thread.","ContentControl":"Represents a content control. Content controls are bounded and potentially labeled regions in a document that serve as containers for specific types of content. Individual content controls may contain contents such as images, tables, or paragraphs of formatted text. Currently, only rich text, plain text, and checkbox content controls are supported.","ContentControlCollection":"Contains a collection of ContentControl objects. Content controls are bounded and potentially labeled regions in a document that serve as containers for specific types of content. Individual content controls may contain contents such as images, tables, or paragraphs of formatted text. Currently, only rich text and plain text content controls are supported.","CritiqueAnnotation":"Represents an annotation wrapper around critique displayed in the document.","CustomProperty":"Represents a custom property.","CustomPropertyCollection":"Contains the collection of CustomProperty objects.","CustomXmlPart":"Represents a custom XML part.","CustomXmlPartCollection":"Contains the collection of CustomXmlPart objects.","CustomXmlPartScopedCollection":"Contains the collection of CustomXmlPart objects with a specific namespace.","Document":"The Document object is the top level object. A Document object contains one or more sections, content controls, and the body that contains the contents of the document.","DocumentCreated":"The DocumentCreated object is the top level object created by Application.CreateDocument. A DocumentCreated object is a special Document object.","DocumentProperties":"Represents document properties.","Field":"Represents a field.","FieldCollection":"Contains a collection of Field objects.","Font":"Represents a font.","InlinePicture":"Represents an inline picture.","InlinePictureCollection":"Contains a collection of InlinePicture objects.","List":"Contains a collection of Paragraph objects.","ListCollection":"Contains a collection of List objects.","ListItem":"Represents the paragraph list item format.","ListLevel":"Represents a list level.","ListLevelCollection":"Contains a collection of ListLevel objects.","ListTemplate":"Represents a ListTemplate.","NoteItem":"Represents a footnote or endnote.","NoteItemCollection":"Contains a collection of NoteItem objects.","Paragraph":"Represents a single paragraph in a selection, range, content control, or document body.","ParagraphCollection":"Contains a collection of Paragraph objects.","ParagraphFormat":"Represents a style of paragraph in a document.","Range":"Represents a contiguous area in a document.","RangeCollection":"Contains a collection of Range objects.","SearchOptions":"Specifies the options to be included in a search operation. To learn more about how to use search options in the Word JavaScript APIs, read Use search options to find text in your Word add-in.","Section":"Represents a section in a Word document.","SectionCollection":"Contains the collection of the document\'s Section objects.","Setting":"Represents a setting of the add -in.","SettingCollection":"Contains the collection of Setting objects.","Shading":"Represents the shading object.","Style":"Represents a style in a Word document.","StyleCollection":"Contains a collection of Style objects.","Table":"Represents a table in a Word document.","TableBorder":"Specifies the border style.","TableCell":"Represents a table cell in a Word document.","TableCellCollection":"Contains the collection of the document\'s TableCell objects.","TableCollection":"Contains the collection of the document\'s Table objects.","TableRow":"Represents a row in a Word document.","TableRowCollection":"Contains the collection of the document\'s TableRow objects.","TableStyle":"Represents the TableStyle object.","TrackedChange":"Represents a tracked change in a Word document.","TrackedChangeCollection":"Contains a collection of TrackedChange."}';
     const parsedObjectDescription = JSON.parse(objectJson);
 
@@ -302,6 +304,21 @@ async function defaultHandler(
       label: vscode.l10n.t("Try the snippet in an Office add-in project"),
     };
     return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreate] };
+  }
+  else if (intention.includes('fix code')) {
+    const activeTextEditor = vscode.window.activeTextEditor;
+    if (activeTextEditor) {
+      let uri = activeTextEditor.document.uri;
+      let diagnostics = vscode.languages.getDiagnostics(uri);
+      let errorDiagnostics = diagnostics.filter(diagnostic => diagnostic.severity === vscode.DiagnosticSeverity.Error);
+      let diagnostic = errorDiagnostics[0];
+      if (diagnostic) {
+        let errorMessage = diagnostic.message;
+        let errorCode = activeTextEditor.document.lineAt(diagnostic.range.start.line).text;
+        await fixErrorCode(errorMessage, errorCode, request);
+      }
+    }
+    return { chatAgentResult: { slashCommand: '' }, followUp: [] };
   }
   else if (lastResponse.includes("```javascript") && (request.userPrompt.toLowerCase().includes("y") || request.userPrompt.includes("Create a new Office add-in including the above code snippet"))) {
     // const lastTimeResponse: vscode.ChatRequestTurn | vscode.ChatResponseTurn | undefined = request.context.history.find(item => item instanceof vscode.ChatResponseTurn);
@@ -446,4 +463,25 @@ async function readTextFile(filePath: string): Promise<string> {
     console.error('Error reading file:', err);
     return '';
   }
+}
+
+async function analyzeIntention(request: AgentRequest): Promise<string> {
+  const lastResponse = getLastResponse(request);
+  const intentionPrompt = `
+  # Role
+  I want you act as an expert in Office JavaScript add-in development area.You are also an advisor for Office add-in developers.
+
+  # Instructions
+  - You should analyze the user's intention.
+  - Your response should either be 'generate code', 'fix code' or 'other'. Do not response any other content.
+  - If the user hopes to see a code snippet, you should only response 'generate code'.
+  - If the user hopes to fix an error in the code, you should only response 'fix code'.
+  - Otherwise, you should only response 'other'.
+  `;
+  let intention = await getResponseAsStringCopilotInteraction(intentionPrompt, request);
+  if (!intention) {
+    intention = "";
+  }
+  return intention;
+
 }
