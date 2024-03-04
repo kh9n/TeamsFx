@@ -8,7 +8,7 @@ export const agentFullName = "Teams Agent";
 export const agentDescription = "Agent for working with all things Teams Toolkit Development";
 export const maxFollowUps = 3;
 
-export const wxpAgentName = "m365";
-export const wxpAgentFullName = "M365 Agent";
-export const wxpAgentDescription = "Agent for working with all things M365 Office Add-in Development";
+export const wxpAgentName = "Microsoft365";
+export const wxpAgentFullName = "Microsoft365 Agent";
+export const wxpAgentDescription = "Ask about Microsoft 365 apps development";
 
