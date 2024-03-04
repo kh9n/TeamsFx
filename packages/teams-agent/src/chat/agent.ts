@@ -293,6 +293,7 @@ async function defaultHandler(
     5. Guide update the existing \`document.getElementById("run").onclick = run;\` properly.
     6. Tell user how to run npm install in the terminal and press F5 to debug the add-in.
   - You should use your knowledge in Office JavaScript add-in development area to help the user when necessary.
+  - At the end of your response, you should ask user 'To run the code, you need to create an add-in project. Do you want to create a project in the current workspace?'.
   </Instructions>
 
   <CodeStructure>
@@ -333,7 +334,8 @@ async function defaultHandler(
   2. Show sample code
     For example:
     "Show me an example to get data from a online database."
-    "Visualize the data."
+    "Replace the API Key with my key."
+    "Generate a chart for the data."
   3. Create a new project
     For example:
     "Create the Office add-in project."
@@ -519,7 +521,7 @@ async function defaultHandler(
       await writeTextFile(tmpCodePath, code);
       return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
     }
-  } else if (intentionResponse === "Create a new project" || (request.userPrompt.toLowerCase().includes('y') && lastResponse.includes('Do you want to create'))) {
+  } else if (intentionResponse === "Create a new project" || (request.userPrompt.toLowerCase().includes('y') && lastResponse.includes('create a project'))) {
     if (vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0) {
       const isFileExist = await fileExists(vscode.Uri.file(tmpFolderPath));
       const lastCode = await readTextFile(tmpCodePath);
@@ -573,10 +575,15 @@ async function defaultHandler(
         // request.userPrompt = '@workspace introduce the current workspace';
         // let response = await getResponseAsStringCopilotInteraction(introduceProjectPrompt, request) ?? '';
         // request.response.markdown(response);
-        request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
-        request.response.markdown(`\`\`\`bash\nnpm install\n\`\`\`\n`);
-        request.response.markdown(`Then you can run the add-in project by hitting \`F5\` or running the following command:\n\n`);
-        request.response.markdown(`\`\`\`bash\nnpm run start\n\`\`\`\n`);
+        // request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
+        // request.response.markdown(`\`\`\`bash\nnpm install\n\`\`\`\n`);
+        // request.response.markdown(`Then you can run the add-in project by hitting \`F5\` or running the following command:\n\n`);
+        // request.response.markdown(`\`\`\`bash\nnpm run start\n\`\`\`\n`);
+        request.response.button({
+          command: LAUNCH_TTK,
+          arguments: [],
+          title: vscode.l10n.t('Switch to Teams Toolkit Extension')
+        });
 
         return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
       }
