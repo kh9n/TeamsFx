@@ -2,8 +2,8 @@
   "name": "teams-agent-preview",
   "publisher": "Microsoft",
   "version": "0.1.0",
-  "displayName": "Teams Chat Agent",
-  "description": "Copilot chat agent for Teams",
+  "displayName": "Microsoft365 Chat Agent",
+  "description": "Copilot chat agent for Microsoft365",
   "repository": {
     "type": "git",
     "url": "https://dev.azure.com/devdiv/DevDiv/_git/teamsagentPoc"
@@ -48,6 +48,7 @@
     "dotenv": "^16.4.1",
     "dree": "^4.6.2",
     "fs-extra": "^11.2.0",
-    "tmp": "^0.2.1"
+    "tmp": "^0.2.1",
+    "lodash": "^4.17.21"
   }
 }
