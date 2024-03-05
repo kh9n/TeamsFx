@@ -213,6 +213,7 @@ async function defaultHandler(
   const lastRequest = getLastRequest(request);
   const tmpRequestPath = path.join(tmpDir, 'tmpRequest.txt');
   const tmpCodePath = path.join(tmpDir, 'tmpCode.txt');
+  const tmpSummaryPath = path.join(tmpDir, 'tmpSummary.txt');
   // const tmpFolderPath = path.join(tmpDir, 'tmpFolder');
   // const intention = await analyzeIntention(request);
   const languageModelID: LanguageModelID = "copilot-gpt-3.5-turbo";
@@ -288,24 +289,25 @@ async function defaultHandler(
   I want you act as an expert in Office JavaScript add-in development area. All user asks related to Word, Excel or PowerPoint should be handled using Office JavaScript API Follow the <Instructions>.
 
   <Instructions>
-  - You should first introduce Office JavaScript add-in to the user, then tell the user how to finish the task step by step. The steps have the following structure:
-    1. Tell user how to set up Office JavaScript add-in dev environment in VS Code.
-    2. Generate code snippets of the method following <CodeStructure> for users to show how to finish the user task.
-    3. Guide user to replace the existing run method.
-    4. Guide user to update <HTMLElement> in the html file to include the new method name.
-    5. Guide update the existing \`document.getElementById("run").onclick = run;\` properly.
-    6. Tell user how to run npm install in the terminal and press F5 to debug the add-in.
-  - You should use your knowledge in Office JavaScript add-in development area to help the user when necessary.
+  - First, you should give a positive reply that  you understand the user's ask and tell user the task can be done by building an Office JavaScript add-in.
+  - Second, you should summarize 2-3 features users need to implement to finish their task. Each featrue should be described in only a few words.
+  - Then, generate a code sample following <CodeStructure> for users to show how to finish the user task.
+  - Introduce the code sample you just generated.
   - At the end of your response, you should ask user 'To run the code, you need to create an add-in project. Do you want to create a project in the current workspace?'.
   </Instructions>
 
   <CodeStructure>
-  - There must be one and only one main method in one code snippet. The main method must strictly follow the structure <CodeTemplate>.
+  There must be one and only one main method in one code snippet. The main method must strictly follow the structure <CodeTemplate>.
   - The main method must have a meaningful [functionName], a correct [hostName] of Word, Excel or Powerpoint, and runnable [Code] to address the user's ask.
   - The main method should not have any passed in parameters. The necessary parameters should be defined inside the method.
   - The main method for each object should contain loading properties, get and set properties and some method calls. All the properties, method calls should be existing on this object or related with it.
+  - All variable declarations MUST be in the body of the method.
+  - When using REST API, you should use fetch.
+  - Don't include any \`npm install\` command in your response.
+  - When using Excel JavaScript API to set the cell value, you should notice the dimension of the cell must be aligned with the dimension input array. Thus, you should figure out the dimension of the array first, and get the range of the cells. Take <ExcelSample> as an example.
   - Except for the main method, you can have other helper methods if necessary. All helper methods must be properly called in the main method.
   - No more code should be generated except for the methods.
+  - The returned method should be well-implemented without any placeholder comments or fake functions.
   </CodeStructure>
 
   <CodeTemplate>
@@ -322,27 +324,31 @@ async function defaultHandler(
   \`\`\`
   </CodeTemplate>
 
-  <HTMLElement>
-    <div role="button" id="[idName]" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
-        <span class="ms-Button-label">[buttonName]</span>
-    </div>
-  </HTMLElement>
+  <ExcelSample>
+    \`\`\`javascript
+    sheet.getCell(0, 0).values = [[0]]; // Assign a 1*1 array to a single cell.
+    sheet.getRange(\`A1:B2\`).values = [['Date', 'Close Price'], ['2024-01-01', 100]]; // Assign a 2*2 array to a 2*2 cell range.
+    \`\`\`
+  </ExcelSample>
   `;
 
   const intentionPrompt = `
   Categorize the user intention into one of the 6 intentions below:
-  1. Show sample code
+  1. Ask for step-by-step guidance
     For example:
-    "Show me an example to get data from a online database."
+    "I want to import data into Excel and do analysis. Tell me what to do."
+  2. Show sample code
+    For example:
+    "Change the data source."
     "Replace the API Key with my key."
     "Generate a chart for the data."
-  2. Create a new project
+  3. Create a new project
     For example:
     "Create the Office add-in project."
-  3. Publish add-in
+  4. Publish add-in
     For example:
     "How can I distribute the add-in to more users?"
-  4. Others
+  5. Others
 
   Return the string of the intention only.
   `;
@@ -352,39 +358,50 @@ async function defaultHandler(
 
   let intentionResponse = await getResponseAsStringCopilotInteraction(intentionPrompt, request) ?? '';
   // request.response.markdown(intentionResponse);
-  // if (intentionResponse.includes("Ask for step-by-step guidance")) {
-  //   fs.unlink(tmpCodePath, (err) => {
-  //     if (err) {
-  //       console.log('Error deleting file:', err);
-  //     } else {
-  //       console.log('File deleted successfully');
-  //     }
-  //   });
+  if (intentionResponse.includes("Ask for step-by-step guidance")) {
+    fs.unlink(tmpCodePath, (err) => {
+      if (err) {
+        console.log('Error deleting file:', err);
+      } else {
+        console.log('File deleted successfully');
+      }
+    });
 
-  //   fs.unlink(tmpRequestPath, (err) => {
-  //     if (err) {
-  //       console.log('Error deleting file:', err);
-  //     } else {
-  //       console.log('File deleted successfully');
-  //     }
-  //   });
-  //   let response = await getResponseAsStringCopilotInteraction(stepByStepPrompt, request) ?? '';
-  //   request.response.markdown(response);
-  //   await writeTextFile(tmpRequestPath, request.userPrompt);
-  //   let code = "";
-  //   if (response !== "") {
-  //     const regex = /```javascript([\s\S]*?)```/g;
-  //     const matches = [...response.matchAll(regex)];
-  //     code = matches.map((match) => match[1]).join('\n');
-  //   }
-  //   await writeTextFile(tmpCodePath, code);
-  //   return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
-  // } else
-  if (intentionResponse.includes("Show sample code")) {
-    let lastCode = await readTextFile(tmpCodePath);
-    const tsFileExist = await fileExists(tsfilePath);
-    if (tsFileExist) {
-      const generateCodePrompt = `
+    fs.unlink(tmpRequestPath, (err) => {
+      if (err) {
+        console.log('Error deleting file:', err);
+      } else {
+        console.log('File deleted successfully');
+      }
+    });
+
+    fs.unlink(tmpSummaryPath, (err) => {
+      if (err) {
+        console.log('Error deleting file:', err);
+      } else {
+        console.log('File deleted successfully');
+      }
+    });
+    const summaryPrompt = `You need to summarize the user's ask and give out a summary in a few words beginning with predicate.`;
+    let summaryResponse = await getResponseAsStringCopilotInteraction(summaryPrompt, request) ?? '';
+    await writeTextFile(tmpSummaryPath, summaryResponse);
+    let response = await getResponseAsStringCopilotInteraction(stepByStepPrompt, request) ?? '';
+    request.response.markdown(response);
+    await writeTextFile(tmpRequestPath, request.userPrompt);
+    let code = "";
+    if (response !== "") {
+      const regex = /```javascript([\s\S]*?)```/g;
+      const matches = [...response.matchAll(regex)];
+      code = matches.map((match) => match[1]).join('\n');
+    }
+    await writeTextFile(tmpCodePath, code);
+    return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
+  } else
+    if (intentionResponse.includes("Show sample code")) {
+      let lastCode = await readTextFile(tmpCodePath);
+      const tsFileExist = await fileExists(tsfilePath);
+      if (tsFileExist) {
+        const generateCodePrompt = `
       I want you to generate Office JavaScript code following <Steps> to resolve the user's ask.
 
       <Steps>
@@ -426,30 +443,31 @@ async function defaultHandler(
       \`\`\`
       </ExcelSample>
       ` ;
-      const stepByStepRequest = await readTextFile(tmpRequestPath);
-      let codeResponse = "";
+        const stepByStepRequest = await readTextFile(tmpRequestPath);
+        let codeResponse = "";
 
-      request.userPrompt = stepByStepRequest.split('.')[0] + '. ' + request.userPrompt;
-      codeResponse = await getResponseAsStringCopilotInteraction(generateCodePrompt, request) ?? '';
-      request.response.markdown(codeResponse);
+        request.userPrompt = stepByStepRequest.split('.')[0] + '. ' + request.userPrompt;
+        codeResponse = await getResponseAsStringCopilotInteraction(generateCodePrompt, request) ?? '';
+        request.response.markdown(codeResponse);
 
-      let code = "";
-      if (codeResponse !== "") {
-        const regex = /```javascript([\s\S]*?)```/g;
-        const matches = [...codeResponse.matchAll(regex)];
-        code = matches.map((match) => match[1]).join('\n');
-      }
-      await writeTextFile(tmpCodePath, code);
+        let code = "";
+        if (codeResponse !== "") {
+          const regex = /```javascript([\s\S]*?)```/g;
+          const matches = [...codeResponse.matchAll(regex)];
+          code = matches.map((match) => match[1]).join('\n');
+        }
+        await writeTextFile(tmpCodePath, code);
 
-      return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
-    } else {
-      const generateCodePrompt = `
+        return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
+      } else {
+        const generateCodePrompt = `
       I want you to generate Office JavaScript code following <Instructions> to resolve the user's ask.
 
       <Instructions>
-      - If the ${lastCode} is not empty, you should generate code based on ${lastCode} and follow <CodeStructure>.
+      - If the ${lastCode} is not empty, you should generate code referring the context of ${lastCode} and follow <CodeStructure>.
       - If the ${lastCode} is empty, you should generate a new code snippet following <CodeStructure>.
       - At the end of your response, you should ask user 'To run the code, you need to create an add-in project. Do you want to create a project in the current workspace?'.
+      </Instructions>
 
       <CodeStructure>
       - There must be one and only one main method in one code snippet. The main method must strictly follow the structure <CodeTemplate>.
@@ -486,119 +504,111 @@ async function defaultHandler(
       </ExcelSample>
       ` ;
 
-      const stepByStepRequest = await readTextFile(tmpRequestPath);
-      let codeResponse = "";
+        const stepByStepRequest = await readTextFile(tmpRequestPath);
+        let codeResponse = "";
 
-      request.userPrompt = stepByStepRequest.split('.')[0] + '. ' + request.userPrompt;
-      codeResponse = await getResponseAsStringCopilotInteraction(generateCodePrompt, request) ?? '';
-      request.response.markdown(codeResponse);
+        request.userPrompt = stepByStepRequest.split('.')[0] + '. ' + request.userPrompt;
+        codeResponse = await getResponseAsStringCopilotInteraction(generateCodePrompt, request) ?? '';
+        request.response.markdown(codeResponse);
 
-      let code = "";
-      if (codeResponse !== "") {
-        const regex = /```javascript([\s\S]*?)```/g;
-        const matches = [...codeResponse.matchAll(regex)];
-        code = matches.map((match) => match[1]).join('\n');
+        let code = "";
+        if (codeResponse !== "") {
+          const regex = /```javascript([\s\S]*?)```/g;
+          const matches = [...codeResponse.matchAll(regex)];
+          code = matches.map((match) => match[1]).join('\n');
+        }
+        await writeTextFile(tmpCodePath, code);
+        return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
       }
-      await writeTextFile(tmpCodePath, code);
-      return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
-    }
-  } else if (intentionResponse.includes("Create a new project") || (request.userPrompt.toLowerCase().includes('y') && lastResponse.includes('create a project'))) {
-    if (vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0) {
-      // const isFileExist = await fileExists(vscode.Uri.file(tmpFolderPath));
-      const lastCode = await readTextFile(tmpCodePath);
-      // if (!) {
-      if (lastCode.includes('Excel')) {
-        host = 'Excel';
-      } else if (lastCode.includes('Word')) {
-        host = 'Word';
-      } else if (lastCode.includes('PowerPoint')) {
-        host = 'PowerPoint';
+    } else if (intentionResponse.includes("Create a new project") || (request.userPrompt.toLowerCase().includes('y') && lastResponse.includes('create a project'))) {
+      if (vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0) {
+        // const isFileExist = await fileExists(vscode.Uri.file(tmpFolderPath));
+        const lastCode = await readTextFile(tmpCodePath);
+        // if (!) {
+        if (lastCode.includes('Excel')) {
+          host = 'Excel';
+        } else if (lastCode.includes('Word')) {
+          host = 'Word';
+        } else if (lastCode.includes('PowerPoint')) {
+          host = 'PowerPoint';
+        }
+        codeMathToBeInserted = correctEnumSpelling(lastCode);
+
+        const wxpSampleURLInfo: SampleUrlInfo = {
+          owner: "GavinGu07",
+          repository: "Office-Add-in-Templates",
+          ref: "main",
+          dir: host
+        };
+        const { samplePaths, fileUrlPrefix } = await getSampleFileInfo(wxpSampleURLInfo, 2);
+        const tempFolder = tmp.dirSync({ unsafeCleanup: true }).name;
+        const nodes = await buildFileTree(fileUrlPrefix, samplePaths, tempFolder, wxpSampleURLInfo.dir, 2, 20);
+
+        const folder = path.join(tempFolder, wxpSampleURLInfo.dir);
+
+        // fs.writeFile(tmpFolderPath, folder, (err) => {
+        //   if (err) {
+        //     console.log('Error writing file:', err);
+        //   } else {
+        //     console.log('File written successfully');
+        //   }
+        // });
+        const summary = await readTextFile(tmpSummaryPath);
+        await modifyFile(folder, codeMathToBeInserted, summary);
+        request.response.button({
+          command: CREATE_WXP_PROJECT_COMMAND_ID,
+          arguments: [folder, defaultTargetFolder],
+          title: vscode.l10n.t('Create add-in project and install dependency')
+        });
+        // request.response.markdown(`\n\n Here is the tree structure of the add-in project.`);
+        // request.response.filetree(nodes, vscode.Uri.file(path.join(tempFolder, wxpSampleURLInfo.dir)));
+        // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
+        return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
+        // }
+        // else {
+        //   console.log('File exists');
+        // const tmpFolder = await readTextFile(tmpFolderPath);
+        // await fs.copy(tmpFolder, defaultTargetFolder);
+        // fs.unlink(tmpFolderPath, (err) => {
+        //   if (err) {
+        //     console.log('Error deleting file:', err);
+        //   } else {
+        //     console.log('File deleted successfully');
+        //   }
+        // });
+        // //   request.response.markdown(`The Office add-in project has been created at ${defaultTargetFolder}.`);
+        // //   // const introduceProjectPrompt = `You should introduce the current workspace files`;
+        // //   // request.userPrompt = '@workspace introduce the current workspace';
+        // //   // let response = await getResponseAsStringCopilotInteraction(introduceProjectPrompt, request) ?? '';
+        // //   // request.response.markdown(response);
+        // //   // request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
+        // //   // request.response.markdown(`\`\`\`bash\nnpm install\n\`\`\`\n`);
+        // //   // request.response.markdown(`Then you can run the add-in project by hitting \`F5\` or running the following command:\n\n`);
+        // //   // request.response.markdown(`\`\`\`bash\nnpm run start\n\`\`\`\n`);
+        // //   request.response.button({
+        // //     command: LAUNCH_TTK,
+        // //     arguments: [],
+        // //     title: vscode.l10n.t('Switch to Teams Toolkit Extension')
+        // //   });
+
+        // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
+        //   const fileExistingPrompt = `The current workspace already has an Office add-in project. You should guide user to create in a new workspace.`;
+        //   let response = await getResponseAsStringCopilotInteraction(fileExistingPrompt, request) ?? '';
+        //   request.response.markdown(response);
+        //   return { chatAgentResult: { slashCommand: "" }, followUp: [] };
+        // }
       }
-      codeMathToBeInserted = correctEnumSpelling(lastCode);
-
-      const wxpSampleURLInfo: SampleUrlInfo = {
-        owner: "GavinGu07",
-        repository: "Office-Add-in-Templates",
-        ref: "main",
-        dir: host
-      };
-      const { samplePaths, fileUrlPrefix } = await getSampleFileInfo(wxpSampleURLInfo, 2);
-      const tempFolder = tmp.dirSync({ unsafeCleanup: true }).name;
-      const nodes = await buildFileTree(fileUrlPrefix, samplePaths, tempFolder, wxpSampleURLInfo.dir, 2, 20);
-
-      const folder = path.join(tempFolder, wxpSampleURLInfo.dir);
-
-      // fs.writeFile(tmpFolderPath, folder, (err) => {
-      //   if (err) {
-      //     console.log('Error writing file:', err);
-      //   } else {
-      //     console.log('File written successfully');
-      //   }
-      // });
-      await modifyFile(folder, codeMathToBeInserted);
-      // await fs.copy(folder, defaultTargetFolder);
-      // request.response.markdown(`The Office add-in project has been created at ${defaultTargetFolder}.`);
-      // request.response.button({
-      //   command: LAUNCH_TTK,
-      //   arguments: [],
-      //   title: vscode.l10n.t('Switch to Teams Toolkit Extension')
-      // });
-      request.response.markdown(`An Office add-in project will be created at ${defaultTargetFolder}. Do you want to create the add-in at this location?\n`);
-      request.response.markdown(`Please create the following button to create an add-in`);
-      request.response.button({
-        command: CREATE_WXP_PROJECT_COMMAND_ID,
-        arguments: [folder, defaultTargetFolder],
-        title: vscode.l10n.t('Create add-in project and install dependency')
-      });
-      // request.response.markdown(`\n\n Here is the tree structure of the add-in project.`);
-      // request.response.filetree(nodes, vscode.Uri.file(path.join(tempFolder, wxpSampleURLInfo.dir)));
-      // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
-      return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
-      // }
-      // else {
-      //   console.log('File exists');
-      // const tmpFolder = await readTextFile(tmpFolderPath);
-      // await fs.copy(tmpFolder, defaultTargetFolder);
-      // fs.unlink(tmpFolderPath, (err) => {
-      //   if (err) {
-      //     console.log('Error deleting file:', err);
-      //   } else {
-      //     console.log('File deleted successfully');
-      //   }
-      // });
-      // //   request.response.markdown(`The Office add-in project has been created at ${defaultTargetFolder}.`);
-      // //   // const introduceProjectPrompt = `You should introduce the current workspace files`;
-      // //   // request.userPrompt = '@workspace introduce the current workspace';
-      // //   // let response = await getResponseAsStringCopilotInteraction(introduceProjectPrompt, request) ?? '';
-      // //   // request.response.markdown(response);
-      // //   // request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
-      // //   // request.response.markdown(`\`\`\`bash\nnpm install\n\`\`\`\n`);
-      // //   // request.response.markdown(`Then you can run the add-in project by hitting \`F5\` or running the following command:\n\n`);
-      // //   // request.response.markdown(`\`\`\`bash\nnpm run start\n\`\`\`\n`);
-      // //   request.response.button({
-      // //     command: LAUNCH_TTK,
-      // //     arguments: [],
-      // //     title: vscode.l10n.t('Switch to Teams Toolkit Extension')
-      // //   });
-
-      // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
-      //   const fileExistingPrompt = `The current workspace already has an Office add-in project. You should guide user to create in a new workspace.`;
-      //   let response = await getResponseAsStringCopilotInteraction(fileExistingPrompt, request) ?? '';
-      //   request.response.markdown(response);
-      //   return { chatAgentResult: { slashCommand: "" }, followUp: [] };
-      // }
-    }
-  } else if (intentionResponse.includes("Publish add-in")) {
-    const publishAddInPrompt =
-      `
+    } else if (intentionResponse.includes("Publish add-in")) {
+      const publishAddInPrompt =
+        `
     I want you to provide all documentations and steps to publish the Office add-in to the store and marketplace.
     `
-    let response = await getResponseAsStringCopilotInteraction(publishAddInPrompt, request) ?? '';
-    request.response.markdown(response);
-    return { chatAgentResult: { slashCommand: "" }, followUp: [] };
-  } else {
+      let response = await getResponseAsStringCopilotInteraction(publishAddInPrompt, request) ?? '';
+      request.response.markdown(response);
+      return { chatAgentResult: { slashCommand: "" }, followUp: [] };
+    } else {
 
-  }
+    }
 
   // let response = await getResponseAsStringCopilotInteraction(plannerPrompt, request) ?? '';
   // request.response.markdown(response);
