@@ -390,13 +390,7 @@ async function defaultHandler(
       code = matches.map((match) => match[1]).join('\n');
     }
     await writeTextFile(tmpCodePath, code);
-    const inspiration = await giveInspirationWithLLM(request);
-    const NextStep: vscode.ChatFollowup = {
-      prompt: inspiration,
-      command: "",
-      label: vscode.l10n.t(inspiration),
-    };
-    return { chatAgentResult: { metadata: { slashCommand: "create" } }, followUp: [NextStep, NextStepCreateDone] };
+    return { chatAgentResult: { metadata: { slashCommand: "create" } }, followUp: [NextStepCreateDone] };
   } else if (intentionResponse.includes("Show sample code")) {
     let lastCode = await readTextFile(tmpCodePath);
     const tsFileExist = await fileExists(tsfilePath);
@@ -457,13 +451,25 @@ async function defaultHandler(
         code = matches.map((match) => match[1]).join('\n');
       }
       await writeTextFile(tmpCodePath, code);
-      const inspiration1 = await giveInspirationWithLLM(request);
+      const inspirePrompt1 =
+        `
+      As an Office JavaScript Add-in expert, give an inspiration to the user what's the next step they can do in LESS than 10 words based on the user's request.
+      - If the data request is format the table, suggest the user to generate a chart.
+      - If the user request is generate a chart, suggest the user to add data labels to the chart.
+      `
+      const inspiration1 = await giveInspirationWithLLM(request, inspirePrompt1);
       const NextStep1: vscode.ChatFollowup = {
         prompt: inspiration1,
         command: "",
         label: vscode.l10n.t(inspiration1),
       };
-      const inspiration2 = await giveInspirationWithLLM(request);
+      const inspirePrompt2 =
+        `
+      As an Office JavaScript Add-in expert, give an inspiration to the user what's the next step they can do in LESS than 10 words based on the user's request.
+      - If the data request is format the table, suggest the user to format the data in another style.
+      - If the user request is generate a chart, suggest the user to format the chart.
+      `
+      const inspiration2 = await giveInspirationWithLLM(request, inspirePrompt2);
       const NextStep2: vscode.ChatFollowup = {
         prompt: inspiration2,
         command: "",
@@ -992,11 +998,7 @@ async function writeTextFile(filePath: string, data: string): Promise<void> {
   });
 }
 
-async function giveInspirationWithLLM(request: AgentRequest): Promise<string> {
-  const inspirePrompt =
-    `
-  As an Office JavaScript Add-in expert, give an inspiration to the user what's the next step they can do in LESS than 10 words based on the user's request. Your suggestions can be generate chart for the data, format the data, insert a table, etc.
-  `
-  let response = await getResponseAsStringCopilotInteraction(inspirePrompt, request) ?? '';
+async function giveInspirationWithLLM(request: AgentRequest, prompt: string): Promise<string> {
+  let response = await getResponseAsStringCopilotInteraction(prompt, request) ?? '';
   return response;
 }
