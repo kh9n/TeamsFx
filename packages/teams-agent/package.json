@@ -2,8 +2,8 @@
   "name": "teams-agent-preview",
   "publisher": "Microsoft",
   "version": "0.1.0",
-  "displayName": "Teams Chat Agent",
-  "description": "Copilot chat agent for Teams",
+  "displayName": "Microsoft365 Chat Agent",
+  "description": "Copilot chat agent for Microsoft365",
   "repository": {
     "type": "git",
     "url": "https://dev.azure.com/devdiv/DevDiv/_git/teamsagentPoc"
@@ -29,6 +29,32 @@
       {
         "name": "teams",
         "description": "Ask how to develop Teams applications",
+        "commands": [
+          {
+            "name": "help",
+            "description": "Get help with using the @teams agent."
+          },
+          {
+            "name": "create",
+            "description": "Describe the app you want to build for Microsoft Teams"
+          },
+          {
+            "name": "nextstep",
+            "description": "Use this command to move to the next step anytime."
+          },
+          {
+            "name": "codetocloud",
+            "description": "Describe the request of mignrating code to cloud"
+          },
+          {
+            "name": "test",
+            "description": "sample/template matching test"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft365",
+        "description": "Ask how to develop Microsoft365 add-ins",
         "commands": [
           {
             "name": "help",
