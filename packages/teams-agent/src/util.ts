@@ -315,18 +315,15 @@ export async function modifyFile(filePath: string, generatedCode: string, addinS
       const button = modifiedHtmlContent.slice(buttonStartIndex, buttonEndIndex);
       if (mapStartIndex !== -1) {
         modifiedTsContent = modifiedTsContent.replace(map, `document.getElementById("${newFunctionName}").onclick = ${newFunctionName}`);
-        if (runStart !== -1) {
-          modifiedTsContent = modifiedTsContent.replace(runElement, `<b>${newFunctionName}</b>`);
-        }
       }
-      else {
-        const lastOnClickStartIndex = modifiedTsContent.lastIndexOf('onclick');
-        const lastOnClickEndIndex = modifiedTsContent.indexOf(';\n', lastOnClickStartIndex) + ';\n'.length;
-        const before = modifiedTsContent.slice(0, lastOnClickEndIndex);
-        const after = modifiedTsContent.slice(lastOnClickEndIndex);
-        const newLine = `    document.getElementById("${newFunctionName}").onclick = ${newFunctionName};\n`;
-        modifiedTsContent = before + newLine + after;
-      }
+      // else {
+      //   const lastOnClickStartIndex = modifiedTsContent.lastIndexOf('onclick');
+      //   const lastOnClickEndIndex = modifiedTsContent.indexOf(';\n', lastOnClickStartIndex) + ';\n'.length;
+      //   const before = modifiedTsContent.slice(0, lastOnClickEndIndex);
+      //   const after = modifiedTsContent.slice(lastOnClickEndIndex);
+      //   const newLine = `    document.getElementById("${newFunctionName}").onclick = ${newFunctionName};\n`;
+      //   modifiedTsContent = before + newLine + after;
+      // }
 
       const newButtonCodeBlock = `
       <div role="button" id="${newFunctionName}" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
@@ -336,13 +333,13 @@ export async function modifyFile(filePath: string, generatedCode: string, addinS
       if (buttonStartIndex !== -1) {
         modifiedHtmlContent = modifiedHtmlContent.replace(button, newButtonCodeBlock);
       }
-      else {
-        const lastButtonStartIndex = modifiedHtmlContent.lastIndexOf('<div role="button"');
-        const lastButtonEndIndex = modifiedHtmlContent.indexOf('</div>\n', lastButtonStartIndex) + + '</div>\n'.length;
-        const before = modifiedHtmlContent.slice(0, lastButtonEndIndex);
-        const after = modifiedHtmlContent.slice(lastButtonEndIndex);
-        modifiedHtmlContent = before + newButtonCodeBlock + '\n' + after;
-      }
+      // else {
+      //   const lastButtonStartIndex = modifiedHtmlContent.lastIndexOf('<div role="button"');
+      //   const lastButtonEndIndex = modifiedHtmlContent.indexOf('</div>\n', lastButtonStartIndex) + + '</div>\n'.length;
+      //   const before = modifiedHtmlContent.slice(0, lastButtonEndIndex);
+      //   const after = modifiedHtmlContent.slice(lastButtonEndIndex);
+      //   modifiedHtmlContent = before + newButtonCodeBlock + '\n' + after;
+      // }
     }
 
     // Write the modified content back to the file
