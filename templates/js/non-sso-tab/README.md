@@ -12,7 +12,7 @@ This template showcases how Microsoft Teams supports the ability to run web-base
 > - A [Microsoft 365 account for development](https://docs.microsoft.com/microsoftteams/platform/toolkit/accounts)
 > - [Set up your dev environment for extending Teams apps across Microsoft 365](https://aka.ms/teamsfx-m365-apps-prerequisites)
 > Please note that after you enrolled your developer tenant in Office 365 Target Release, it may take couple days for the enrollment to take effect.
-> - [Teams Toolkit Visual Studio Code Extension](https://aka.ms/teams-toolkit) version 5.0.0 and higher or [Teams Toolkit CLI](https://aka.ms/teamsfx-cli)
+> - [Teams Toolkit Visual Studio Code Extension](https://aka.ms/teams-toolkit) version 5.0.0 and higher or [Teams Toolkit CLI](https://aka.ms/teamsfx-toolkit-cli)
 
 1. First, select the Teams Toolkit icon on the left in the VS Code toolbar.
 2. In the Account section, sign in with your [Microsoft 365 account](https://docs.microsoft.com/microsoftteams/platform/toolkit/accounts) if you haven't already.
@@ -21,7 +21,7 @@ This template showcases how Microsoft Teams supports the ability to run web-base
 
 **Congratulations**! You are running an application that can now show a basic web page in Teams, Outlook and the Microsoft 365 app.
 
-![Basic Tab](https://github.com/OfficeDev/TeamsFx/assets/11220663/ad7bd534-cdb2-4c18-a71b-b206b6387b4c)
+![Basic Tab](https://github.com/OfficeDev/TeamsFx/assets/139844715/1a7edb41-a471-46da-850c-dc21f5a4d431)
 
 ## What's included in the template
 
