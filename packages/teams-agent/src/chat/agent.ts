@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
@@ -34,13 +34,15 @@ import {
   openUrlCommand,
 } from "../subCommand/nextStep/command";
 import { getTestCommand } from "../subCommand/testCommand";
-import { buildFileTree, getSampleFileInfo, modifyFile } from "../util";
+import { buildFileTree, getSampleFileInfo } from "../util";
 import { agentDescription, agentName, maxFollowUps, wxpAgentDescription, wxpAgentName, } from "./agentConsts";
 import {
   LanguageModelID,
   getResponseAsStringCopilotInteraction
 } from "./copilotInteractions";
 import { SlashCommandHandlerResult, SlashCommandsOwner } from "./slashCommands";
+
+export const CREATE_WXP_PROJECT_COMMAND_ID = 'teamsfx.createWxpProject';
 
 export interface ITeamsChatAgentResult extends vscode.ChatResult {
   metadata: {
@@ -77,11 +79,9 @@ export interface IAgentRequestHandler {
   ): vscode.ChatFollowup[] | undefined;
 }
 
-export const CREATE_WXP_PROJECT_COMMAND_ID = 'teamsfx.createWxpProject';
-
 /**
- * Owns slash commands that are knowingly exposed to the user.
- */
+* Owns slash commands that are knowingly exposed to the user.
+*/
 const agentSlashCommandsOwner = new SlashCommandsOwner(
   {
     noInput: helpCommandName,
@@ -205,7 +205,7 @@ async function defaultHandler(
   const lastRequest = getLastRequest(request);
   const tmpRequestPath = path.join(tmpDir, 'tmpRequest.txt');
   const tmpCodePath = path.join(tmpDir, 'tmpCode.txt');
-  const tmpSummaryPath = path.join(tmpDir, 'tmpSummary.txt');
+  // const tmpSummaryPath = path.join(tmpDir, 'tmpSummary.txt');
   // const tmpFolderPath = path.join(tmpDir, 'tmpFolder');
   // const intention = await analyzeIntention(request);
   const languageModelID: LanguageModelID = "copilot-gpt-3.5-turbo";
@@ -277,14 +277,58 @@ async function defaultHandler(
   </HTMLElement>
   `;
 
+  let fewShotSample = "";
+  const fewShotSampleRange = `
+  <ExcelSample>
+  \`\`\`javascript
+  sheet.getCell(0, 0).values = [[0]]; // Assign a 1*1 array to a single cell.
+  sheet.getRange(\`A1:B3\`).values = [['Date', 'Close Price'], ['2024-01-01', 100], ['2024-01-02', 110]]; // Assign a 3*2 array to a 3*2 range.
+  \`\`\`
+</ExcelSample>`;
+  const fewShotSampleFull = `
+<ExcelSample>
+    User: fetch stock data and import into Excel.
+    GitHub Copilot:
+    \`\`\`javascript
+    //1. fetch data
+      const symbol = 'MSFT';
+      const key = 'YOUR_API';
+      const response = await fetch(https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=$\{symbol\}&apikey=$\{key\});
+  const data = await response.json();
+
+  //2. parse data
+  // Parse the JSON response and extract the necessary data
+  // Replace the placeholders with your parsing logic
+  const stockData = data['Time Series (Daily)'];
+  const dates = Object.keys(stockData);
+  const closePrices = Object.values(stockData).map(entry => entry['4. close']);
+  let result = dates.map((item, index) => {
+    return [item, closePrices[index]];
+  });
+
+  // 3. Import parsed data into Excel
+      const worksheet = context.workbook.worksheets.getActiveWorksheet();
+      const range = worksheet.getRange(\`A1: B$\{ result.length \}\`);
+      range.values = result;
+    \`\`\`
+  </ExcelSample>
+  `;
+
+  if (request.userPrompt.includes('alpha')) {
+    fewShotSample = fewShotSampleFull;
+  }
+  else {
+    fewShotSample = fewShotSampleRange;
+  }
+
   const stepByStepPrompt = `
   I want you act as an expert in Office JavaScript add-in development area. All user asks related to Word, Excel or PowerPoint should be handled using Office JavaScript API Follow the <Instructions>.
 
   <Instructions>
   - First, you should give a positive reply that  you understand the user's ask and tell user the task can be done by building an Office JavaScript add-in.
   - Second, you should summarize 2-3 features users need to implement to finish their task. Each featrue should be described in only a few words.
-  - Then, generate a code sample following <CodeStructure> for users to show how to finish the user task.
-  - Introduce the code sample you just generated.
+  - Then, generate a code sample following <CodeStructure> for users to show how to finish the user task. if an API key is needed, remember to notify the user.
+  - Next, explain the code sample you just generated.
   - At the end of your response, you should ask user 'To run the code, you need to create an add-in project. Do you want to create a project in the current workspace?'.
   </Instructions>
 
@@ -296,7 +340,7 @@ async function defaultHandler(
   - All variable declarations MUST be in the body of the method.
   - When using REST API, you should use fetch.
   - Don't include any \`npm install\` command in your response.
-  - When using Excel JavaScript API to set the cell value, you should notice the dimension of the cell must be aligned with the dimension input array. Thus, you should figure out the dimension of the array first, and get the range of the cells. Take <ExcelSample> as an example.
+  - When using Excel JavaScript API to set a [value] to range, you need to first clearly figure out the dimension of [value]. And then must make sure the dimension of the range must align with the dimension [value]. Take <ExcelSample> as an example.
   - Except for the main method, you can have other helper methods if necessary. All helper methods must be properly called in the main method.
   - No more code should be generated except for the methods.
   - The returned method should be well-implemented without any placeholder comments or fake functions.
@@ -316,35 +360,30 @@ async function defaultHandler(
   \`\`\`
   </CodeTemplate>
 
-  <ExcelSample>
-    \`\`\`javascript
-    sheet.getCell(0, 0).values = [[0]]; // Assign a 1*1 array to a single cell.
-    sheet.getRange(\`A1:B3\`).values = [['Date', 'Close Price'], ['2024-01-01', 100], ['2024-01-02', 110]]; // Assign a 3*2 array to a 3*2 cell range.
-    \`\`\`
-  </ExcelSample>
+  ${fewShotSample}
   `;
 
   const intentionPrompt = `
   Categorize the user intention into one of the 6 intentions below:
-  1. Ask for step-by-step guidance
+  1. "Ask for step-by-step guidance"
     For example:
-    "I want to import data into Excel and do analysis. Tell me what to do."
-  2. Show sample code
+    "I want to import stock data into Excel and do analysis. Tell me what to do."
+    "I want to import NBA data into Excel and do analysis."
+  2. "Show sample code"
     For example:
-    "Change the data source."
     "Format the table."
-    "Generate a chart for the data."
-  3. Create a new project
+    "Generate a line chart."
+  3. "Create a new project"
     For example:
     "Create the project in the current workspace."
-  4. Publish add-in
+  4. "Publish add-in"
     For example:
     "How can I distribute the add-in to more users?"
-  5. Fix the code
+  5. "Fix the code"
     For example:
     "Fix the error"
     "I have an error:"
-  6. Others
+  6. "Others"
   Return the string of the intention only.
   `;
   // const codeTemplate = `
@@ -353,7 +392,7 @@ async function defaultHandler(
 
   let intentionResponse = await getResponseAsStringCopilotInteraction(intentionPrompt, request) ?? '';
   // request.response.markdown(intentionResponse);
-  if (intentionResponse.includes("Ask for step-by-step guidance")) {
+  if (intentionResponse.includes("Ask for step-by-step guidance") || request.userPrompt.toLowerCase().includes("i want to")) {
     fs.unlink(tmpCodePath, (err) => {
       if (err) {
         console.log('Error deleting file:', err);
@@ -370,16 +409,19 @@ async function defaultHandler(
       }
     });
 
-    fs.unlink(tmpSummaryPath, (err) => {
-      if (err) {
-        console.log('Error deleting file:', err);
-      } else {
-        console.log('File deleted successfully');
-      }
-    });
-    const summaryPrompt = `Summarize the user's purpose with less than 10 words without a subject.`;
-    let summaryResponse = await getResponseAsStringCopilotInteraction(summaryPrompt, request) ?? '';
-    await writeTextFile(tmpSummaryPath, summaryResponse);
+    // fs.unlink(tmpSummaryPath, (err) => {
+    //   if (err) {
+    //     console.log('Error deleting file:', err);
+    //   } else {
+    //     console.log('File deleted successfully');
+    //   }
+    // });
+    // const summaryPrompt = `Summarize the user's purpose with less than 10 words without a subject.`;
+    // let summaryResponse = await getResponseAsStringCopilotInteraction(summaryPrompt, request) ?? '';
+    // await writeTextFile(tmpSummaryPath, summaryResponse);
+
+    //request.commandVariables = { languageModelID: "copilot-gpt-4" };
+
     let response = await getResponseAsStringCopilotInteraction(stepByStepPrompt, request) ?? '';
     request.response.markdown(response);
     await writeTextFile(tmpRequestPath, request.userPrompt);
@@ -391,17 +433,20 @@ async function defaultHandler(
     }
     await writeTextFile(tmpCodePath, code);
     return { chatAgentResult: { metadata: { slashCommand: "create" } }, followUp: [NextStepCreateDone] };
-  } else if (intentionResponse.includes("Show sample code")) {
+  } else if (intentionResponse.includes("Show sample code")
+    || (request.userPrompt.toLowerCase().includes('format')
+      || request.userPrompt.toLowerCase().includes('chart')
+      || request.userPrompt.toLowerCase().includes('alpha'))) {
     let lastCode = await readTextFile(tmpCodePath);
     const tsFileExist = await fileExists(tsfilePath);
     if (tsFileExist) {
       const generateCodePrompt = `
-      I want you to generate Office JavaScript code following <Steps> to resolve the user's ask.
+      I want you to generate Office JavaScript code following <Instructions> to resolve the user's ask.
 
-      <Steps>
-      1. If the ${lastCode} is not empty, you should generate code referring to the context of ${lastCode} and follow <CodeStructure>. If the ${lastCode} is empty, you should generate a new code snippet following <CodeStructure>.
-      2. You should guide the user to insert the code into TypeScript file.
-      </Steps>
+      <Instructions>
+      - If the ${lastCode} is not empty, you must generate code based on ${lastCode} and follow <CodeStructure>. If the ${lastCode} is empty, you should generate a new code snippet following <CodeStructure>.
+      - Explain the code sample you just generated.
+      </Instructions>
 
       <CodeStructure>
       - There must be one and only one main method in one code snippet. The main method must strictly follow the structure <CodeTemplate>.
@@ -409,9 +454,9 @@ async function defaultHandler(
       - The main method should not have any passed in parameters. The necessary parameters should be defined inside the method.
       - The main method for each object should contain loading properties, get and set properties and some method calls. All the properties, method calls should be existing on this object or related with it.
       - All variable declarations MUST be in the body of the method.
-      - When using REST API, you should use fetch.
+      - When using REST API, you should use fetch. And Generate the code to fetch stock data from alphavantage.
       - Don't include any \`npm install\` command in your response.
-      - When using Excel JavaScript API to set the cell value, you should notice the dimension of the cell must be aligned with the dimension input array. Thus, you should figure out the dimension of the array first, and get the range of the cells. Take <ExcelSample> as an example.
+      - When using Excel JavaScript API to generate some code. Take <ExcelSample> as an example.
       - Except for the main method, you can have other helper methods if necessary. All helper methods must be properly called in the main method.
       - No more code should be generated except for the methods.
       </CodeStructure>
@@ -432,8 +477,10 @@ async function defaultHandler(
 
       <ExcelSample>
       \`\`\`javascript
-      sheet.getCell(0, 0).values = [[0]]; // Assign a 1*1 array to a single cell.
-      sheet.getRange(\`A1:B3\`).values = [['Date', 'Close Price'], ['2024-01-01', 100], ['2024-01-02', 110]]; // Assign a 3*2 array to a 3*2 cell range.
+      // range is an existing variable of the type Excel.Range
+      const chart = sheet.charts.add(Excel.ChartType.line, range, Excel.ChartSeriesBy.auto);
+      chart.title.text = 'Stock Trend';
+      chart.title.format.font.bold = true;
       \`\`\`
       </ExcelSample>
       ` ;
@@ -450,7 +497,9 @@ async function defaultHandler(
         const matches = [...codeResponse.matchAll(regex)];
         code = matches.map((match) => match[1]).join('\n');
       }
-      await writeTextFile(tmpCodePath, code);
+      if (code.length > lastCode.length) {
+        await writeTextFile(tmpCodePath, code);
+      }
       const inspirePrompt1 =
         `
       As an Office JavaScript Add-in expert, give an inspiration to the user what's the next step they can do in LESS than 10 words based on the user's request.
@@ -481,8 +530,8 @@ async function defaultHandler(
       I want you to generate Office JavaScript code following <Instructions> to resolve the user's ask.
 
       <Instructions>
-      - If the ${lastCode} is not empty, you should generate code referring the context of ${lastCode} and follow <CodeStructure>.
-      - If the ${lastCode} is empty, you should generate a new code snippet following <CodeStructure>.
+      - If the ${lastCode} is not empty, you should generate code based on ${lastCode} and follow <CodeStructure>. If the ${lastCode} is empty, you should generate a new code snippet following <CodeStructure>.
+      - Explain the code sample you just generated.
       - At the end of your response, you should ask user 'To run the code, you need to create an add-in project. Do you want to create a project in the current workspace?'.
       </Instructions>
 
@@ -514,12 +563,32 @@ async function defaultHandler(
       </CodeTemplate>
 
       <ExcelSample>
+      User: fetch stock data and import into Excel.
+      GitHub Copilot:
       \`\`\`javascript
-      sheet.getCell(0, 0).values = [[0]]; // Assign a 1*1 array to a single cell.
-      sheet.getRange(\`A1:B3\`).values = [['Date', 'Close Price'], ['2024-01-01', 100], ['2024-01-02', 110]]; // Assign a 3*2 array to a 3*2 cell range.
+      //1. fetch data
+      const symbol = 'MSFT';
+      const key = 'YOUR_API';
+      const response = await fetch(https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=$\{symbol\}&apikey=$\{key\});
+      const data = await response.json();
+
+      //2. parse data
+      // Parse the JSON response and extract the necessary data
+      // Replace the placeholders with your parsing logic
+      const stockData = data['Time Series (Daily)'];
+      const dates = Object.keys(stockData);
+      const closePrices = Object.values(stockData).map(entry => entry['4. close']);
+      let result = dates.map((item, index) => {
+        return [item, closePrices[index]];
+      });
+
+      // 3. Import parsed data into Excel
+      const worksheet = context.workbook.worksheets.getActiveWorksheet();
+      const range = worksheet.getRange(\`A1: B$\{ result.length \}\`);
+      range.values = result;
       \`\`\`
-      </ExcelSample>
-      ` ;
+    </ExcelSample>
+    `;
 
       const stepByStepRequest = await readTextFile(tmpRequestPath);
       let codeResponse = "";
@@ -534,7 +603,9 @@ async function defaultHandler(
         const matches = [...codeResponse.matchAll(regex)];
         code = matches.map((match) => match[1]).join('\n');
       }
-      await writeTextFile(tmpCodePath, code);
+      if (code.length > lastCode.length) {
+        await writeTextFile(tmpCodePath, code);
+      }
       return { chatAgentResult: { metadata: { slashCommand: "create" } }, followUp: [NextStepCreateDone] };
     }
   } else if (intentionResponse.includes("Create a new project") || (request.userPrompt.toLowerCase().includes('y') && lastResponse.includes('create a project'))) {
@@ -570,8 +641,8 @@ async function defaultHandler(
       //     console.log('File written successfully');
       //   }
       // });
-      const summary = await readTextFile(tmpSummaryPath);
-      await modifyFile(folder, codeMathToBeInserted, summary);
+      // const summary = await readTextFile(tmpSummaryPath);
+      // await modifyFile(folder, codeMathToBeInserted, summary);
       request.response.markdown(`The ${host} add-in project has been created at ${defaultTargetFolder}.\n\n`);
       request.response.markdown(`The key files are:\n\n`);
       request.response.markdown(`1. **manifest.xml**: This is the manifest file for the Office Add-in. It defines the settings and capabilities of the add-in.\n\n`);
@@ -886,6 +957,7 @@ export async function createWXPCommand(sourcePath: string, dstPath: string) {
   const readmePath = path.join(dstPath, 'README.md');
   const readmeUri = vscode.Uri.file(readmePath);
   vscode.commands.executeCommand('markdown.showPreview', readmeUri);
+  vscode.commands.executeCommand('workbench.view.explorer');
   const buttonOptions = ["Yes", "No"];
   const notificationMessage = "Install dependencies for Office Add-in?";
   const result = await vscode.window.showInformationMessage(notificationMessage, ...buttonOptions);

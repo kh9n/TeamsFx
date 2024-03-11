@@ -1,0 +1,12 @@
+[
+  {
+    "Intention": "Ask for step-by-step guidance",
+    "Request": "Can you walk me through the process of setting up a new account?",
+    "Response": "Sure! First, go to our website and click on the 'Sign Up' button. Then, enter your email address and create a password. After that, you'll need to verify your email address. Once you've done that, you'll be able to log in and start using your new account."
+  },
+  {
+    "Intention": "Ask for step-by-step guidance",
+    "Request": "Can you walk me through the process of setting up a new account?",
+    "Response": "Sure! First, go to our website and click on the 'Sign Up' button. Then, enter your email address and create a password. After that, you'll need to verify your email address. Once you've done that, you'll be able to log in and start using your new account."
+  }
+]
