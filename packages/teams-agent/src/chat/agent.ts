@@ -34,7 +34,7 @@ import {
   openUrlCommand,
 } from "../subCommand/nextStep/command";
 import { getTestCommand } from "../subCommand/testCommand";
-import { buildFileTree, getSampleFileInfo } from "../util";
+import { buildFileTree, getSampleFileInfo, modifyFile } from "../util";
 import { agentDescription, agentName, maxFollowUps, wxpAgentDescription, wxpAgentName, } from "./agentConsts";
 import {
   LanguageModelID,
@@ -642,7 +642,7 @@ async function defaultHandler(
       //   }
       // });
       // const summary = await readTextFile(tmpSummaryPath);
-      // await modifyFile(folder, codeMathToBeInserted, summary);
+      await modifyFile(folder, codeMathToBeInserted);
       request.response.markdown(`The ${host} add-in project has been created at ${defaultTargetFolder}.\n\n`);
       request.response.markdown(`The key files are:\n\n`);
       request.response.markdown(`1. **manifest.xml**: This is the manifest file for the Office Add-in. It defines the settings and capabilities of the add-in.\n\n`);
