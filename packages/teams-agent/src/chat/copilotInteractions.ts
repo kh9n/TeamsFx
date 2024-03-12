@@ -12,6 +12,8 @@ export type CopilotInteractionResult =
 export type LanguageModelID = "copilot-gpt-3.5-turbo" | "copilot-gpt-4";
 
 const showDebugCopilotInteractionAsProgress = false;
+const showDebugCopilotInteractionInfoInConsole = false;
+
 function debugCopilotInteraction(
   progress: vscode.Progress<vscode.ChatExtendedProgress>,
   msg: string
@@ -23,9 +25,11 @@ function debugCopilotInteraction(
         .trim()}\`\n\n`,
     });
   }
-  console.log(
-    `${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\``
-  );
+  if (showDebugCopilotInteractionInfoInConsole) {
+    console.log(
+      `${new Date().toISOString()} >> \`${msg.replace(/\n/g, "").trim()}\``
+    );
+  }
 }
 
 /**
@@ -241,8 +245,8 @@ export function getBooleanFieldFromCopilotResponseMaybeWithStrJson(
         typeof value === "boolean"
           ? value
           : value.toLowerCase() === "true" || value.toLowerCase() === "false"
-          ? (JSON.parse(value.toLowerCase()) as boolean)
-          : undefined
+            ? (JSON.parse(value.toLowerCase()) as boolean)
+            : undefined
       )
       .find(
         (value): value is boolean =>
