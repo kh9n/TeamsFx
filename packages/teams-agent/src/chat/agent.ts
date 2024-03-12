@@ -609,89 +609,89 @@ async function defaultHandler(
       return { chatAgentResult: { metadata: { slashCommand: "create" } }, followUp: [NextStepCreateDone] };
     }
   } else if (intentionResponse.includes("Create a new project") || (request.userPrompt.toLowerCase().includes('y') && lastResponse.includes('create a project'))) {
-    if (vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0) {
-      // const isFileExist = await fileExists(vscode.Uri.file(tmpFolderPath));
-      const lastCode = await readTextFile(tmpCodePath);
-      // if (!) {
-      if (lastCode.includes('Excel')) {
-        host = 'Excel';
-      } else if (lastCode.includes('Word')) {
-        host = 'Word';
-      } else if (lastCode.includes('PowerPoint')) {
-        host = 'PowerPoint';
-      }
-      codeMathToBeInserted = correctEnumSpelling(lastCode);
-
-      const wxpSampleURLInfo: SampleUrlInfo = {
-        owner: "GavinGu07",
-        repository: "Office-Add-in-Templates",
-        ref: "main",
-        dir: host
-      };
-      const { samplePaths, fileUrlPrefix } = await getSampleFileInfo(wxpSampleURLInfo, 2);
-      const tempFolder = tmp.dirSync({ unsafeCleanup: true }).name;
-      const nodes = await buildFileTree(fileUrlPrefix, samplePaths, tempFolder, wxpSampleURLInfo.dir, 2, 20);
-
-      const folder = path.join(tempFolder, wxpSampleURLInfo.dir);
-
-      // fs.writeFile(tmpFolderPath, folder, (err) => {
-      //   if (err) {
-      //     console.log('Error writing file:', err);
-      //   } else {
-      //     console.log('File written successfully');
-      //   }
-      // });
-      // const summary = await readTextFile(tmpSummaryPath);
-      await modifyFile(folder, codeMathToBeInserted);
-      request.response.markdown(`The ${host} add-in project has been created at ${defaultTargetFolder}.\n\n`);
-      request.response.markdown(`The key files are:\n\n`);
-      request.response.markdown(`1. **manifest.xml**: This is the manifest file for the Office Add-in. It defines the settings and capabilities of the add-in.\n\n`);
-      request.response.markdown(`2. **package.json**: This is the configuration file for npm. It lists the dependencies and scripts for the project.\n\n`);
-      request.response.markdown(`3. **src/ directory**: This directory contains the source code for the add-in.\n\n`)
-      request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
-      request.response.button({
-        command: CREATE_WXP_PROJECT_COMMAND_ID,
-        arguments: [folder, defaultTargetFolder],
-        title: vscode.l10n.t('Create add-in project and install dependency')
-      });
-      // request.response.markdown(`\n\n Here is the tree structure of the add-in project.`);
-      // request.response.filetree(nodes, vscode.Uri.file(path.join(tempFolder, wxpSampleURLInfo.dir)));
-      // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
-      return { chatAgentResult: { metadata: { slashCommand: 'create' } }, followUp: [NextStepPublish] };
-      // }
-      // else {
-      //   console.log('File exists');
-      // const tmpFolder = await readTextFile(tmpFolderPath);
-      // await fs.copy(tmpFolder, defaultTargetFolder);
-      // fs.unlink(tmpFolderPath, (err) => {
-      //   if (err) {
-      //     console.log('Error deleting file:', err);
-      //   } else {
-      //     console.log('File deleted successfully');
-      //   }
-      // });
-      // //   request.response.markdown(`The Office add-in project has been created at ${defaultTargetFolder}.`);
-      // //   // const introduceProjectPrompt = `You should introduce the current workspace files`;
-      // //   // request.userPrompt = '@workspace introduce the current workspace';
-      // //   // let response = await getResponseAsStringCopilotInteraction(introduceProjectPrompt, request) ?? '';
-      // //   // request.response.markdown(response);
-      // //   // request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
-      // //   // request.response.markdown(`\`\`\`bash\nnpm install\n\`\`\`\n`);
-      // //   // request.response.markdown(`Then you can run the add-in project by hitting \`F5\` or running the following command:\n\n`);
-      // //   // request.response.markdown(`\`\`\`bash\nnpm run start\n\`\`\`\n`);
-      // //   request.response.button({
-      // //     command: LAUNCH_TTK,
-      // //     arguments: [],
-      // //     title: vscode.l10n.t('Switch to Teams Toolkit Extension')
-      // //   });
-
-      // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
-      //   const fileExistingPrompt = `The current workspace already has an Office add-in project. You should guide user to create in a new workspace.`;
-      //   let response = await getResponseAsStringCopilotInteraction(fileExistingPrompt, request) ?? '';
-      //   request.response.markdown(response);
-      //   return { chatAgentResult: { slashCommand: "" }, followUp: [] };
-      // }
+    // if (vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0) {
+    // const isFileExist = await fileExists(vscode.Uri.file(tmpFolderPath));
+    const lastCode = await readTextFile(tmpCodePath);
+    // if (!) {
+    if (lastCode.includes('Excel')) {
+      host = 'Excel';
+    } else if (lastCode.includes('Word')) {
+      host = 'Word';
+    } else if (lastCode.includes('PowerPoint')) {
+      host = 'PowerPoint';
     }
+    codeMathToBeInserted = correctEnumSpelling(lastCode);
+
+    const wxpSampleURLInfo: SampleUrlInfo = {
+      owner: "GavinGu07",
+      repository: "Office-Add-in-Templates",
+      ref: "main",
+      dir: host
+    };
+    const { samplePaths, fileUrlPrefix } = await getSampleFileInfo(wxpSampleURLInfo, 2);
+    const tempFolder = tmp.dirSync({ unsafeCleanup: true }).name;
+    const nodes = await buildFileTree(fileUrlPrefix, samplePaths, tempFolder, wxpSampleURLInfo.dir, 2, 20);
+
+    const folder = path.join(tempFolder, wxpSampleURLInfo.dir);
+
+    // fs.writeFile(tmpFolderPath, folder, (err) => {
+    //   if (err) {
+    //     console.log('Error writing file:', err);
+    //   } else {
+    //     console.log('File written successfully');
+    //   }
+    // });
+    // const summary = await readTextFile(tmpSummaryPath);
+    await modifyFile(folder, codeMathToBeInserted);
+    request.response.markdown(`The ${host} add-in project has been created at ${defaultTargetFolder}.\n\n`);
+    request.response.markdown(`The key files are:\n\n`);
+    request.response.markdown(`1. **manifest.xml**: This is the manifest file for the Office Add-in. It defines the settings and capabilities of the add-in.\n\n`);
+    request.response.markdown(`2. **package.json**: This is the configuration file for npm. It lists the dependencies and scripts for the project.\n\n`);
+    request.response.markdown(`3. **src/ directory**: This directory contains the source code for the add-in.\n\n`)
+    request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
+    request.response.button({
+      command: CREATE_WXP_PROJECT_COMMAND_ID,
+      arguments: [folder, defaultTargetFolder],
+      title: vscode.l10n.t('Create add-in project and install dependency')
+    });
+    // request.response.markdown(`\n\n Here is the tree structure of the add-in project.`);
+    // request.response.filetree(nodes, vscode.Uri.file(path.join(tempFolder, wxpSampleURLInfo.dir)));
+    // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepCreateDone] };
+    return { chatAgentResult: { metadata: { slashCommand: 'create' } }, followUp: [NextStepPublish] };
+    // }
+    // else {
+    //   console.log('File exists');
+    // const tmpFolder = await readTextFile(tmpFolderPath);
+    // await fs.copy(tmpFolder, defaultTargetFolder);
+    // fs.unlink(tmpFolderPath, (err) => {
+    //   if (err) {
+    //     console.log('Error deleting file:', err);
+    //   } else {
+    //     console.log('File deleted successfully');
+    //   }
+    // });
+    // //   request.response.markdown(`The Office add-in project has been created at ${defaultTargetFolder}.`);
+    // //   // const introduceProjectPrompt = `You should introduce the current workspace files`;
+    // //   // request.userPrompt = '@workspace introduce the current workspace';
+    // //   // let response = await getResponseAsStringCopilotInteraction(introduceProjectPrompt, request) ?? '';
+    // //   // request.response.markdown(response);
+    // //   // request.response.markdown(`\n\n To run the project, you need to first install all the packages needed:\n\n`);
+    // //   // request.response.markdown(`\`\`\`bash\nnpm install\n\`\`\`\n`);
+    // //   // request.response.markdown(`Then you can run the add-in project by hitting \`F5\` or running the following command:\n\n`);
+    // //   // request.response.markdown(`\`\`\`bash\nnpm run start\n\`\`\`\n`);
+    // //   request.response.button({
+    // //     command: LAUNCH_TTK,
+    // //     arguments: [],
+    // //     title: vscode.l10n.t('Switch to Teams Toolkit Extension')
+    // //   });
+
+    // return { chatAgentResult: { slashCommand: "create" }, followUp: [NextStepPublish] };
+    //   const fileExistingPrompt = `The current workspace already has an Office add-in project. You should guide user to create in a new workspace.`;
+    //   let response = await getResponseAsStringCopilotInteraction(fileExistingPrompt, request) ?? '';
+    //   request.response.markdown(response);
+    //   return { chatAgentResult: { slashCommand: "" }, followUp: [] };
+    // }
+    // }
   } else if (intentionResponse.includes("Publish add-in")) {
     const publishAddInPrompt =
       `
