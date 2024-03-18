@@ -4,6 +4,7 @@ import { EOL } from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 import { SampleUrlInfo } from "./sample";
+import exp = require("constants");
 
 export async function sendRequestWithTimeout<T>(
   requestFn: (cancelToken: CancelToken) => Promise<AxiosResponse<T>>,
@@ -346,6 +347,46 @@ export async function modifyFile(filePath: string, generatedCode: string, addinS
     const encoder = new TextEncoder();
     await vscode.workspace.fs.writeFile(tsFileUri, encoder.encode(modifiedTsContent));
     await vscode.workspace.fs.writeFile(htmlFileUri, encoder.encode(modifiedHtmlContent));
+  } catch (error) {
+    console.error(`Failed to modify file: ${error}`);
+  }
+}
+
+export async function modifyFile2(filePath: string, tsCode: string, htmlCode: string, cssCode: string) {
+  const tsfilePath = path.join(filePath, "src", "taskpane", "taskpane.ts");
+  const htmlFilePath = path.join(filePath, "src", "taskpane", "taskpane.html");
+  const cssFilePath = path.join(filePath, "src", "taskpane", "taskpane.css");
+
+  const tsFileUri = vscode.Uri.file(tsfilePath);
+  const htmlFileUri = vscode.Uri.file(htmlFilePath);
+  const cssFileUri = vscode.Uri.file(cssFilePath);
+  try {
+
+  } catch (error) {
+    console.error(`Failed to modify file: ${error}`);
+  }
+}
+
+export async function modifyFManifest(filePath: string, manifestCode: string) {
+  const manifestFilePath = path.join(filePath, "manifest.xml");
+  const manifestFileUri = vscode.Uri.file(manifestFilePath);
+  try {
+    // Read the file
+    const manifestFileData = await vscode.workspace.fs.readFile(manifestFileUri);
+    let manifestFileContent = manifestFileData.toString();
+
+    // Modify the file content
+    const start = manifestFileContent.indexOf(`A template to get started.`);
+    const end = start + `A template to get started.`.length;
+    const description = manifestFileContent.slice(start, end);
+    let modifiedManifestContent = manifestFileContent;
+    if (start !== -1) {
+      modifiedManifestContent = manifestFileContent.replace(description, manifestCode);
+    }
+
+    // Write the modified content back to the file
+    const encoder = new TextEncoder();
+    await vscode.workspace.fs.writeFile(manifestFileUri, encoder.encode(modifiedManifestContent));
   } catch (error) {
     console.error(`Failed to modify file: ${error}`);
   }
