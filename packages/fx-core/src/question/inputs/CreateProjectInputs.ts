@@ -15,11 +15,11 @@ export interface CreateProjectInputs extends Inputs {
   runtime?: "node" | "dotnet";
   /** @description New Project */
   "project-type"?: "bot-type" | "tab-type" | "me-type" | "outlook-addin-type";
+  /** @description Select to create an Outlook, Word, Excel, or PowerPoint Add-in */
+  "addin-office-capability"?: "outlook-addin-type" | "word" | "excel" | "powerpoint";
   /** @description Capabilities */
   capabilities?:
     | "bot"
-    | "ai-bot"
-    | "ai-assistant-bot"
     | "notification"
     | "command-bot"
     | "workflow-bot"
@@ -33,11 +33,13 @@ export interface CreateProjectInputs extends Inputs {
     | "link-unfurling"
     | "copilot-plugin-new-api"
     | "copilot-plugin-existing-api"
-    | "copilot-plugin-openai-plugin"
+    | "custom-copilot-basic"
+    | "custom-copilot-assistant"
     | "message-extension"
     | "BotAndMessageExtension"
-    | "TabNonSsoAndBot";
-  /** @description Choose triggers */
+    | "TabNonSsoAndBot"
+    | "taskpane";
+  /** @description Select triggers */
   "bot-host-type-trigger"?:
     | "http-restify"
     | "http-webapi"
@@ -54,18 +56,30 @@ export interface CreateProjectInputs extends Inputs {
   "spfx-webpart-name"?: string;
   /** @description SPFx solution folder */
   "spfx-folder"?: string;
+  /** @description Add-in Host */
+  "addin-host"?: string;
   /** @description Architecture of Search Based Message Extension */
   "me-architecture"?: "new-api" | "api-spec" | "bot-plugin" | "bot";
   /** @description OpenAPI Description Document */
   "openapi-spec-location"?: string;
-  /** @description OpenAI Plugin Manifest */
-  "openai-plugin-manifest"?: string;
   /** @description Select Operation(s) Teams Can Interact with */
   "api-operation"?: string[];
   /** @description Authentication Type */
   "api-me-auth"?: "none" | "api-key";
+  /** @description AI Agent */
+  "custom-copilot-assistant"?:
+    | "custom-copilot-assistant-new"
+    | "custom-copilot-assistant-assistantsApi";
   /** @description Programming Language */
   "programming-language"?: "javascript" | "typescript" | "csharp";
-  /** @description Application name */
+  /** @description Service for Large Language Model (LLM) */
+  "llm-service"?: "llm-service-azureOpenAI" | "llm-service-openAI";
+  /** @description Azure OpenAI Key */
+  "azureOpenAI-key"?: string;
+  /** @description Azure OpenAI Endpoint */
+  "azureOpenAI-endpoint"?: string;
+  /** @description OpenAI Key */
+  "openAI-key"?: string;
+  /** @description Application Name */
   "app-name"?: string;
 }

@@ -12,7 +12,7 @@ This app template is a search-based [message extension](https://docs.microsoft.c
 > - A [Microsoft 365 account for development](https://docs.microsoft.com/microsoftteams/platform/toolkit/accounts)
 > - [Set up your dev environment for extending Teams apps across Microsoft 365](https://aka.ms/teamsfx-m365-apps-prerequisites)
 >   Please note that after you enrolled your developer tenant in Office 365 Target Release, it may take couple days for the enrollment to take effect.
-> - [Teams Toolkit Visual Studio Code Extension](https://aka.ms/teams-toolkit) version 5.0.0 and higher or [Teams Toolkit CLI](https://aka.ms/teamsfx-cli)
+> - [Teams Toolkit Visual Studio Code Extension](https://aka.ms/teams-toolkit) version 5.0.0 and higher or [Teams Toolkit CLI](https://aka.ms/teamsfx-toolkit-cli)
 > - Join Microsoft 365 Copilot Plugin development [early access program](https://aka.ms/plugins-dev-waitlist).
 
 1. First, select the Teams Toolkit icon on the left in the VS Code toolbar.
@@ -30,7 +30,7 @@ This app template is a search-based [message extension](https://docs.microsoft.c
 
 **Congratulations**! You are running an application that can now search npm registries in Teams and Copilot.
 
-![Search ME Copilot](https://github.com/OfficeDev/TeamsFx/assets/107838226/a718b206-33ed-4d3e-99af-376c1f159c2b)
+![Search ME Copilot](https://github.com/OfficeDev/TeamsFx/assets/107838226/0beaa86e-d446-4ab3-a701-eec205d1b367)
 
 ## What's included in the template
 

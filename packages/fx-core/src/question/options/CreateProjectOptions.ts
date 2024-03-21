@@ -20,6 +20,12 @@ export const CreateProjectOptions: CLICommandOption[] = [
     choices: ["node", "dotnet"],
   },
   {
+    name: "addin-office-capability",
+    type: "string",
+    description: "Select to create an Outlook, Word, Excel, or PowerPoint Add-in",
+    choices: ["outlook-addin-type", "word", "excel", "powerpoint"],
+  },
+  {
     name: "capability",
     questionName: "capabilities",
     type: "string",
@@ -28,8 +34,6 @@ export const CreateProjectOptions: CLICommandOption[] = [
     required: true,
     choices: [
       "bot",
-      "ai-bot",
-      "ai-assistant-bot",
       "notification",
       "command-bot",
       "workflow-bot",
@@ -43,10 +47,12 @@ export const CreateProjectOptions: CLICommandOption[] = [
       "link-unfurling",
       "copilot-plugin-new-api",
       "copilot-plugin-existing-api",
-      "copilot-plugin-openai-plugin",
+      "custom-copilot-basic",
+      "custom-copilot-assistant",
       "message-extension",
       "BotAndMessageExtension",
       "TabNonSsoAndBot",
+      "taskpane",
     ],
     choiceListCommand: "teamsapp list templates",
   },
@@ -99,6 +105,12 @@ export const CreateProjectOptions: CLICommandOption[] = [
     description: "Directory or Path that contains the existing SharePoint Framework solution.",
   },
   {
+    name: "addin-host",
+    type: "string",
+    description: "Add-in Host",
+    default: "No Options",
+  },
+  {
     name: "me-architecture",
     type: "string",
     shortName: "m",
@@ -111,12 +123,6 @@ export const CreateProjectOptions: CLICommandOption[] = [
     type: "string",
     shortName: "a",
     description: "OpenAPI description document location.",
-  },
-  {
-    name: "openai-plugin-manifest",
-    type: "string",
-    shortName: "m",
-    description: "OpenAI plugin website domain or manifest URL.",
   },
   {
     name: "api-operation",
@@ -132,12 +138,41 @@ export const CreateProjectOptions: CLICommandOption[] = [
     choices: ["none", "api-key"],
   },
   {
+    name: "custom-copilot-assistant",
+    type: "string",
+    description: "AI Agent",
+    default: "custom-copilot-assistant-new",
+    choices: ["custom-copilot-assistant-new", "custom-copilot-assistant-assistantsApi"],
+  },
+  {
     name: "programming-language",
     type: "string",
     shortName: "l",
     description: "Programming Language",
     default: "javascript",
     choices: ["javascript", "typescript", "csharp"],
+  },
+  {
+    name: "llm-service",
+    type: "string",
+    description: "Service for Large Language Model (LLM)",
+    default: "llm-service-azureOpenAI",
+    choices: ["llm-service-azureOpenAI", "llm-service-openAI"],
+  },
+  {
+    name: "azureOpenAI-key",
+    type: "string",
+    description: "Azure OpenAI Key",
+  },
+  {
+    name: "azureOpenAI-endpoint",
+    type: "string",
+    description: "Azure OpenAI Endpoint",
+  },
+  {
+    name: "openAI-key",
+    type: "string",
+    description: "OpenAI Key",
   },
   {
     name: "folder",
@@ -151,7 +186,7 @@ export const CreateProjectOptions: CLICommandOption[] = [
     name: "app-name",
     type: "string",
     shortName: "n",
-    description: "Application name",
+    description: "Application Name",
     required: true,
   },
 ];

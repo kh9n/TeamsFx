@@ -23,6 +23,7 @@ import {
 
 import {
   AadAppTemplateCodeLensProvider,
+  ApiPluginCodeLensProvider,
   CopilotPluginCodeLensProvider,
   CryptoCodeLensProvider,
   ManifestTemplateCodeLensProvider,
@@ -47,11 +48,13 @@ import {
   isExistingUser,
   isSPFxProject,
   isTeamsFxProject,
+  isOfficeAddInProject,
   setUriEventHandler,
   unsetIsTeamsFxProject,
   workspaceUri,
 } from "./globalVariables";
 import * as handlers from "./handlers";
+import * as officeDevHandlers from "./officeDevHandlers";
 import { ManifestTemplateHoverProvider } from "./hoverProvider";
 import { VsCodeUI } from "./qm/vsc_ui";
 import { ExtTelemetry } from "./telemetry/extTelemetry";
@@ -65,6 +68,21 @@ import { checkProjectTypeAndSendTelemetry } from "./utils/projectChecker";
 import { ReleaseNote } from "./utils/releaseNote";
 import { ExtensionSurvey } from "./utils/survey";
 import { configMgr } from "./config";
+import officeDevTreeViewManager from "./treeview/officeDevTreeViewManager";
+import {
+  CHAT_CREATE_SAMPLE_COMMAND_ID,
+  CHAT_EXECUTE_COMMAND_ID,
+  CHAT_OPENURL_COMMAND_ID,
+  chatParticipantName,
+} from "./chat/consts";
+import followupProvider from "./chat/followupProvider";
+import {
+  chatCreateCommandHandler,
+  chatRequestHandler,
+  openUrlCommandHandler,
+  handleFeedback,
+} from "./chat/handlers";
+import { chatExecuteCommandHandler } from "./chat/commands/nextstep/nextstepCommandHandler";
 
 export let VS_CODE_UI: VsCodeUI;
 
@@ -87,8 +105,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
   registerInternalCommands(context);
 
+  registerChatParticipant(context);
+
   if (isTeamsFxProject) {
     activateTeamsFxRegistration(context);
+  }
+
+  if (isOfficeAddInProject) {
+    activateOfficeDevRegistration(context);
   }
 
   // Call activate function of toolkit core.
@@ -99,6 +123,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // UI is ready to show & interact
   await vscode.commands.executeCommand("setContext", "fx-extension.isTeamsFx", isTeamsFxProject);
+
+  await vscode.commands.executeCommand(
+    "setContext",
+    "fx-extension.isOfficeAddIn",
+    isOfficeAddInProject
+  );
 
   void VsCodeLogInstance.info("Teams Toolkit extension is now active!");
 
@@ -164,6 +194,11 @@ function activateTeamsFxRegistration(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onWillSaveTextDocument(handlers.saveTextDocumentHandler)
   );
+}
+
+function activateOfficeDevRegistration(context: vscode.ExtensionContext) {
+  registerOfficeDevMenuCommands(context);
+  officeDevTreeViewManager.registerOfficeDevTreeViews(context);
 }
 
 /**
@@ -262,6 +297,12 @@ function registerActivateCommands(context: vscode.ExtensionContext) {
     () => Correlator.run(handlers.migrateTeamsTabAppHandler)
   );
   context.subscriptions.push(migrateTeamsTabAppCmd);
+
+  // Register local debug run icon
+  const runIconCmd = vscode.commands.registerCommand("fx-extension.selectAndDebug", (...args) =>
+    Correlator.run(handlers.selectAndDebugHandler, args)
+  );
+  context.subscriptions.push(runIconCmd);
 }
 
 /**
@@ -343,6 +384,23 @@ function registerInternalCommands(context: vscode.ExtensionContext) {
     Correlator.run(handlers.signinAzureCallback, args)
   );
   context.subscriptions.push(signinAzure);
+}
+
+/**
+ * Copilot Chat Participant
+ */
+function registerChatParticipant(context: vscode.ExtensionContext) {
+  const participant = vscode.chat.createChatParticipant(chatParticipantName, chatRequestHandler);
+  participant.iconPath = vscode.Uri.joinPath(context.extensionUri, "media", "teams.png");
+  participant.followupProvider = followupProvider;
+  participant.onDidReceiveFeedback((e) => handleFeedback(e));
+
+  context.subscriptions.push(
+    participant,
+    vscode.commands.registerCommand(CHAT_CREATE_SAMPLE_COMMAND_ID, chatCreateCommandHandler),
+    vscode.commands.registerCommand(CHAT_EXECUTE_COMMAND_ID, chatExecuteCommandHandler),
+    vscode.commands.registerCommand(CHAT_OPENURL_COMMAND_ID, openUrlCommandHandler)
+  );
 }
 
 function registerTreeViewCommandsInDevelopment(context: vscode.ExtensionContext) {
@@ -586,6 +644,12 @@ function registerMenuCommands(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(openDocumentLinkCmd);
 
+  const azureAccountSignOutHelpCmd = vscode.commands.registerCommand(
+    "fx-extension.azureAccountSignOutHelp",
+    (...args) => Correlator.run(handlers.azureAccountSignOutHelpHandler, args)
+  );
+  context.subscriptions.push(azureAccountSignOutHelpCmd);
+
   const aadManifestTemplateCodeLensCmd = vscode.commands.registerCommand(
     "fx-extension.openPreviewAadFile",
     (...args) => Correlator.run(handlers.openPreviewAadFile, args)
@@ -651,12 +715,103 @@ function registerMenuCommands(context: vscode.ExtensionContext) {
     Correlator.run(handlers.refreshCopilotCallback, args)
   );
   context.subscriptions.push(refreshCopilot);
+}
 
-  // Register local debug run icon
-  const runIconCmd = vscode.commands.registerCommand("fx-extension.selectAndDebug", (...args) =>
-    Correlator.run(handlers.selectAndDebugHandler, args)
+/**
+ * Commands used in office dev tree view menus, e.g. Explorer context & view item title/context
+ */
+function registerOfficeDevMenuCommands(context: vscode.ExtensionContext) {
+  // development
+  const openDevelopmentLinkCmd = vscode.commands.registerCommand(
+    "fx-extension.openOfficeDevDevelopmentLink",
+    (...args) => Correlator.run(officeDevHandlers.openDevelopmentLinkHandler, args)
   );
-  context.subscriptions.push(runIconCmd);
+  context.subscriptions.push(openDevelopmentLinkCmd);
+
+  //fx-extension.create and fx-extension.openSamples are registered in registerActivateCommands
+  const installDependencyCmd = vscode.commands.registerCommand(
+    "fx-extension.installDependency",
+    () => Correlator.run(officeDevHandlers.installOfficeAddInDependencies)
+  );
+  context.subscriptions.push(installDependencyCmd);
+
+  const localDebug = vscode.commands.registerCommand("fx-extension.localdebug", () =>
+    Correlator.run(handlers.treeViewLocalDebugHandler)
+  );
+  context.subscriptions.push(localDebug);
+
+  const stopDebugging = vscode.commands.registerCommand("fx-extension.stopDebugging", () =>
+    Correlator.run(officeDevHandlers.stopOfficeAddInDebug)
+  );
+  context.subscriptions.push(stopDebugging);
+
+  // lifecycle
+  const openLifecycleLinkCmd = vscode.commands.registerCommand(
+    "fx-extension.openOfficeDevLifecycleLink",
+    (...args) => Correlator.run(officeDevHandlers.openLifecycleLinkHandler, args)
+  );
+  context.subscriptions.push(openLifecycleLinkCmd);
+
+  const openDeployLinkCmd = vscode.commands.registerCommand(
+    "fx-extension.officeDevDeploy",
+    (...args) => Correlator.run(officeDevHandlers.openOfficeDevDeployHandler, args)
+  );
+  context.subscriptions.push(openDeployLinkCmd);
+
+  const publishToAppSourceCmd = vscode.commands.registerCommand(
+    "fx-extension.publishToAppSource",
+    () => Correlator.run(officeDevHandlers.publishToAppSourceHandler)
+  );
+  context.subscriptions.push(publishToAppSourceCmd);
+
+  // utility
+  const validateManifest = vscode.commands.registerCommand(
+    "fx-extension.validateApplication",
+    (...args) => Correlator.run(officeDevHandlers.validateOfficeAddInManifest, args)
+  );
+  context.subscriptions.push(validateManifest);
+
+  const openManifestCmd = vscode.commands.registerCommand("fx-extension.editManifest", (...args) =>
+    Correlator.run(officeDevHandlers.editOfficeAddInManifest, args)
+  );
+  context.subscriptions.push(openManifestCmd);
+
+  const generateManifestGUID = vscode.commands.registerCommand(
+    "fx-extension.generateManifestGUID",
+    () => Correlator.run(officeDevHandlers.generateManifestGUID)
+  );
+  context.subscriptions.push(generateManifestGUID);
+
+  const openOfficePartnerCenterLinkCmd = vscode.commands.registerCommand(
+    "fx-extension.officePartnerCenter",
+    (...args) => Correlator.run(officeDevHandlers.openOfficePartnerCenterHandler, args)
+  );
+  context.subscriptions.push(openOfficePartnerCenterLinkCmd);
+
+  // help and feedback
+  const openHelpFeedbackLinkCmd = vscode.commands.registerCommand(
+    "fx-extension.openOfficeDevHelpFeedbackLink",
+    (...args) => Correlator.run(officeDevHandlers.openHelpFeedbackLinkHandler, args)
+  );
+  context.subscriptions.push(openHelpFeedbackLinkCmd);
+
+  const openOfficeDevDocumentLinkCmd = vscode.commands.registerCommand(
+    "fx-extension.openOfficeDevDocument",
+    (...args) => Correlator.run(officeDevHandlers.openDocumentHandler, args)
+  );
+  context.subscriptions.push(openOfficeDevDocumentLinkCmd);
+
+  const openGetStartedLinkCmd = vscode.commands.registerCommand(
+    "fx-extension.openGetStarted",
+    (...args) => Correlator.run(officeDevHandlers.openGetStartedLinkHandler, args)
+  );
+  context.subscriptions.push(openGetStartedLinkCmd);
+
+  const reportIssueCmd = vscode.commands.registerCommand(
+    "fx-extension.openOfficeDevReportIssues",
+    (...args) => Correlator.run(officeDevHandlers.openReportIssues, args)
+  );
+  context.subscriptions.push(reportIssueCmd);
 }
 
 async function initializeContextKey(context: vscode.ExtensionContext, isTeamsFxProject: boolean) {
@@ -744,7 +899,11 @@ function registerCodelensAndHoverProviders(context: vscode.ExtensionContext) {
   const smeOpenapiSpecSelector = {
     language: "yaml",
     scheme: "file",
-    pattern: `**/${AppPackageFolderName}/apiSpecFiles/*.{yml,yaml}`,
+    pattern: `**/${AppPackageFolderName}/apiSpecificationFile/*.{yml,yaml}`,
+  };
+  const apiPluginOpenapiSpecSelector: vscode.DocumentSelector = {
+    scheme: "file",
+    pattern: `**/${AppPackageFolderName}/apiSpecificationFile/*.{yml,yaml,json}`,
   };
 
   const aadAppTemplateCodeLensProvider = new AadAppTemplateCodeLensProvider();
@@ -782,6 +941,14 @@ function registerCodelensAndHoverProviders(context: vscode.ExtensionContext) {
     vscode.languages.registerCodeLensProvider(
       manifestTemplateSelector,
       copilotPluginCodeLensProvider
+    )
+  );
+
+  const apiPluginCodeLensProvider = new ApiPluginCodeLensProvider();
+  context.subscriptions.push(
+    vscode.languages.registerCodeLensProvider(
+      apiPluginOpenapiSpecSelector,
+      apiPluginCodeLensProvider
     )
   );
 
@@ -900,10 +1067,16 @@ async function runBackgroundAsyncTasks(
   const releaseNote = new ReleaseNote(context);
   await releaseNote.show();
 
-  await openWelcomePageAfterExtensionInstallation();
+  if (!isOfficeAddInProject) {
+    await openWelcomePageAfterExtensionInstallation();
+  }
 
   if (isTeamsFxProject) {
     await runTeamsFxBackgroundTasks();
+  }
+
+  if (isOfficeAddInProject) {
+    await runOfficeDevBackgroundTasks();
   }
 
   const survey = ExtensionSurvey.getInstance();
@@ -920,6 +1093,10 @@ async function runTeamsFxBackgroundTasks() {
     await handlers.autoOpenProjectHandler();
     await TreeViewManagerInstance.updateTreeViewsByContent(upgradeable);
   }
+}
+
+async function runOfficeDevBackgroundTasks() {
+  await officeDevHandlers.autoOpenOfficeDevProjectHandler();
 }
 
 function registerInCommandController(

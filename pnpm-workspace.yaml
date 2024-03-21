@@ -10,4 +10,5 @@ packages:
   -  "packages/tests"
   -  "packages/server"
   -  "packages/vscode-ui"
+  -  "packages/spec-parser"
   -  "templates"
