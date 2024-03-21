@@ -90,3 +90,21 @@ function getTeamsTemplateMetadata(): ProjectMetadata[] {
     };
   });
 }
+
+async function getWXPSampleMetaData(): Promise<ProjectMetadata[]> {
+  const sampleConfig = await fetchOnlineSampleConfig();
+  const result: ProjectMetadata[] = [];
+  for (const sample of sampleConfig.samples) {
+    if (sample.types.includes("Word") || sample.types.includes("Excel") || sample.types.includes("Powerpoint")) {
+      result.push({
+        id: sample.id,
+        type: "sample",
+        platform: "WXP",
+        name: sample.title,
+        description: sample.fullDescription,
+      });
+    }
+  }
+  return result;
+}
+

@@ -78,11 +78,19 @@ export async function getSampleFileInfo(
     }, retryLimits)
   ).data as SampleFileInfo;
 
-  const samplePaths = fileInfo?.tree
+  let samplePaths = fileInfo?.tree
     ?.filter(
       (node) => node.path.startsWith(`${urlInfo.dir}/`) && node.type !== "tree"
     )
     .map((node) => node.path);
+
+  // Fetch the whole repo for Office add-ins.
+  if (!samplePaths) {
+    samplePaths = fileInfo?.tree.filter(
+      (node) => node.type !== "tree"
+    ).map((node) => node.path);
+  }
+
   const fileUrlPrefix = `https://raw.githubusercontent.com/${urlInfo.owner}/${urlInfo.repository}/${fileInfo?.sha}/`;
   return { samplePaths, fileUrlPrefix };
 }

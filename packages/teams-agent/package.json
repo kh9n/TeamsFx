@@ -51,6 +51,28 @@
             "description": "sample/template matching test"
           }
         ]
+      },
+      {
+        "name": "officeaddin",
+        "description": "Ask how to develop Teams applications",
+        "commands": [
+          {
+            "name": "help",
+            "description": "Get help with using the @officeaddin agent."
+          },
+          {
+            "name": "create",
+            "description": "Describe the app you want to build for Microsoft Teams"
+          },
+          {
+            "name": "nextstep",
+            "description": "Use this command to move to the next step anytime."
+          },
+          {
+            "name": "generatecode",
+            "description": "Describe the request of mignrating code to cloud"
+          }
+        ]
       }
     ]
   },

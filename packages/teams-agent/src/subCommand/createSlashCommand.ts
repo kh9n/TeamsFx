@@ -94,7 +94,7 @@ async function showFileTree(projectMetadata: ProjectMetadata, request: AgentRequ
   return path.join(tempFolder, downloadUrlInfo.dir);
 }
 
-async function getSampleDownloadUrlInfo(sampleId: string): Promise<SampleUrlInfo> {
+export async function getSampleDownloadUrlInfo(sampleId: string): Promise<SampleUrlInfo> {
   const sampleConfig = await fetchOnlineSampleConfig();
   const sample = sampleConfig.samples.find((sample) => sample.id === sampleId);
   let downloadUrlInfo = {
