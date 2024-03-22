@@ -960,7 +960,19 @@ export async function createWXPCommand(sourcePath: string, dstPath: string) {
   vscode.commands.executeCommand('workbench.view.explorer');
   const buttonOptions = ["Yes", "No"];
   const notificationMessage = "Install dependencies for Office Add-in?";
-  const result = await vscode.window.showInformationMessage(notificationMessage, ...buttonOptions);
+  const result = await vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    title: "Information",
+    cancellable: false
+}, async (progress) => {
+    progress.report({ message: notificationMessage });
+
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve(vscode.window.showInformationMessage(notificationMessage, ...buttonOptions));
+        }, 2147483647); // close after 5 seconds
+    });
+});
   const timeoutPromise = new Promise((_resolve: (value: string) => void, reject) => {
     const wait = setTimeout(() => {
       clearTimeout(wait);
