@@ -179,7 +179,8 @@ export class CreateApiKeyDriver implements StepDriver {
       allowAPIKeyAuth: isApiKeyEnabled(),
       allowMultipleParameters: isMultipleParametersEnabled(),
     });
-    const operations = await parser.list();
+    const listResult = await parser.list();
+    const operations = listResult.validAPIs;
     const domains = operations
       .filter((value) => {
         return value.auth?.type === "apiKey" && value.auth?.name === args.name;
@@ -268,8 +269,7 @@ export class CreateApiKeyDriver implements StepDriver {
     const apiKey: ApiSecretRegistration = {
       description: args.name,
       targetUrlsShouldStartWith: domain,
-      applicableToApps: ApiSecretRegistrationAppType.SpecificApp,
-      specificAppId: args.appId,
+      applicableToApps: ApiSecretRegistrationAppType.AnyApp,
       targetAudience: ApiSecretRegistrationTargetAudience.AnyTenant,
       clientSecrets: clientSecrets,
       manageableByUsers: [
