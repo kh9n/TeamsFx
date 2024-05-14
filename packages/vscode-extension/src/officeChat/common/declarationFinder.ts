@@ -11,6 +11,7 @@ export class DeclarationFinder {
   private static instance: DeclarationFinder;
   private definionFile: ts.SourceFile | undefined;
   private declarations: SampleData[] = [];
+  private classDeclarations: string[] = [];
 
   private constructor() {}
 
@@ -198,5 +199,50 @@ export class DeclarationFinder {
       return { docComment: comments, summary: description };
     }
     return { docComment: "", summary: "" };
+  }
+
+  public async getAllClassDeclarations() {
+    if (this.classDeclarations.length === 0) {
+      const typeDefStr = await fetchRawFileContent(
+        `https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/master/types/office-js/index.d.ts`
+      );
+      const definionFile = ts.createSourceFile(
+        DeclarationFinder.DECLARATION_FILE_NAME,
+        typeDefStr,
+        ts.ScriptTarget.Latest,
+        true
+      );
+
+      ts.forEachChild(definionFile, (node) => {
+        const classNames = this.getAllClassNames(node);
+        classNames?.forEach((name) => {
+          this.classDeclarations.push(name);
+        });
+      });
+    }
+    return this.classDeclarations;
+  }
+
+  private getAllClassNames(node: ts.Node) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    if (ts.isModuleDeclaration(node) && node.name) {
+      // a namespace is a "module" in the AST
+      const memberNames: string[] = [];
+      ts.forEachChild(node, (childNode) => {
+        if (ts.isModuleBlock(childNode)) {
+          ts.forEachChild(childNode, (node) => {
+            const declaredClassName = (node as ts.ClassDeclaration).name?.getText().trim();
+            if (
+              declaredClassName &&
+              (node as ts.ClassDeclaration).kind === ts.SyntaxKind.ClassDeclaration
+            ) {
+              memberNames.push(declaredClassName);
+            }
+          });
+        }
+      });
+      return memberNames;
+    }
+    return null;
   }
 }

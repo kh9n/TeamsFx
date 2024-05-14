@@ -34,6 +34,7 @@ import {
 import { localize } from "../../../utils/localizeUtils";
 import { getTokenLimitation } from "../../consts";
 import { SampleData } from "../samples/sampleData";
+import { DeclarationFinder } from "../declarationFinder";
 
 export class CodeGenerator implements ISkill {
   name: string;
@@ -178,7 +179,9 @@ export class CodeGenerator implements ISkill {
     customFunctions: boolean;
     complexity: number;
   }> {
-    const userPrompt = getUserInputBreakdownTaskUserPrompt(spec.userInput);
+    const classDeclarations = await DeclarationFinder.getInstance().getAllClassDeclarations();
+    const classDeclarationsStr = classDeclarations.join(",");
+    const userPrompt = getUserInputBreakdownTaskUserPrompt(spec.userInput, classDeclarationsStr);
     const defaultSystemPrompt = getUserAskPreScanningSystemPrompt();
 
     // Perform the desired operation

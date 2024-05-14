@@ -12,18 +12,21 @@ import { buildDynamicPrompt } from "./dynamicPrompt";
 import { inputRai, outputRai } from "./dynamicPrompt/formats";
 import { getCopilotResponseAsString } from "../chat/utils";
 import { officeSampleProvider } from "./commands/create/officeSamples";
+import { DeclarationFinder } from "./common/declarationFinder";
 
 export async function purifyUserMessage(
   message: string,
   token: CancellationToken
 ): Promise<string> {
+  const classDeclarations = await DeclarationFinder.getInstance().getAllClassDeclarations();
+  const classDeclarationsStr = classDeclarations.join(",");
   const userMessagePrompt = `
   Please act as a professional Office JavaScript add-in developer and expert office application user, to rephrase the following meesage in an accurate and professional manner. Message: ${message}
   `;
   const systemPrompt = `
   You should only return the rephrased message, without any explanation or additional information. 
   
-  There're some general terms has special meaning in the Microsoft Office or Office JavaScript add-in development, please make sure you're using the correct terms or keep it as it is. For example, "task pane" is preferred than "side panel" in Office JavaScript add-in developing, or keep "Annotation", "Comment", "Document", "Body", "Slide", "Range", "Note", etc. as they're refer to a feature in Office client.
+  There're some general terms has special meaning in the Microsoft Office or Office JavaScript add-in development, please make sure you're using the correct terms or keep it as it is. For example, "task pane" is preferred than "side panel" in Office JavaScript add-in developing, or keep terms in [${classDeclarationsStr},custom function] as they're refer to a feature in Office client.
 
   The rephrased message should be clear and concise for developer.
   `;
