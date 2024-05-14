@@ -11,6 +11,7 @@ import {
   getMostRelevantClassPrompt,
   getMostRelevantClassUsingNameOnlyPrompt,
   getMostRelevantMethodPropertyPrompt,
+  getMostRelevantSamplePrompt,
 } from "../../officePrompts";
 import { DeclarationFinder } from "../declarationFinder";
 import { getTokenLimitation } from "../../consts";
@@ -55,6 +56,61 @@ export class SampleProvider {
     }
     return new Promise<Map<string, SampleData>>((resolve, reject) => {
       resolve(samples);
+    });
+  }
+
+  public async getTopKMostRelevantSampleUsingLLM(
+    token: CancellationToken,
+    host: string,
+    userInput: string,
+    k: number
+  ): Promise<Map<string, SampleData>> {
+    const samples = await OfficeTemplateModelPorvider.getInstance().getSamples(host as WXPAppName);
+    const sampleDescriptionList: string[] = [];
+    const sampleMap = new Map();
+    if (samples.length != 0) {
+      samples.forEach((sample) => {
+        sampleDescriptionList.push(sample.description);
+        sampleMap.set(sample.description, sample);
+      });
+    }
+
+    const model: "copilot-gpt-3.5-turbo" | "copilot-gpt-4" = "copilot-gpt-4";
+    const prompt = getMostRelevantSamplePrompt(sampleDescriptionList, userInput);
+    const sampleMessage = new LanguageModelChatUserMessage(prompt);
+
+    const messageTokensCount = countMessagesTokens([sampleMessage]);
+    console.debug(`[getTopKMostRelevantSampleUsingLLM] messageTokensCount: ${messageTokensCount}`);
+
+    const copilotResponse = await getCopilotResponseAsString(model, [sampleMessage], token);
+    let returnObject: { relevantSampleDescriptions: string[] } = { relevantSampleDescriptions: [] };
+    try {
+      returnObject = JSON.parse(
+        copilotResponse.replace("```json", "").replace("```", "").replace(/\\n/g, "")
+      );
+    } catch (error) {
+      console.log(copilotResponse);
+    }
+
+    const relevantSampleDescriptions: string[] = returnObject.relevantSampleDescriptions;
+
+    const mostRelevantSamples: Map<string, SampleData> = new Map<string, SampleData>();
+    let counter = 0;
+    for (const description of relevantSampleDescriptions) {
+      if (counter === k) {
+        break;
+      }
+      const sampleData = sampleMap.get(description);
+      if (sampleData !== undefined) {
+        mostRelevantSamples.set(sampleData.name, sampleData);
+        counter++;
+      } else {
+        console.log("SampleDescription not found in the relevantSampleDescriptions map");
+      }
+    }
+
+    return new Promise<Map<string, SampleData>>((resolve, reject) => {
+      resolve(mostRelevantSamples);
     });
   }
 

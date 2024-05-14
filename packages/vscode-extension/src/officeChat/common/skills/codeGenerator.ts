@@ -30,6 +30,7 @@ import {
   getGenerateCodeSamplePrompt,
   getCodeSamplePrompt,
   getGenerateCodeDeclarationPrompt,
+  getSampleDescriptionAndUserInputMatchScorePrompt,
 } from "../../officePrompts";
 import { localize } from "../../../utils/localizeUtils";
 import { getTokenLimitation } from "../../consts";
@@ -77,16 +78,47 @@ export class CodeGenerator implements ISkill {
     }
 
     if (!spec.appendix.codeSample || spec.appendix.codeSample.length === 0) {
-      const samples = await SampleProvider.getInstance().getTopKMostRelevantScenarioSampleCodesBM25(
+      // Get TOP K relevant sample code using LLM
+      const samples = await SampleProvider.getInstance().getTopKMostRelevantSampleUsingLLM(
         token,
         spec.appendix.host,
         spec.userInput,
         1
       );
       if (samples.size > 0) {
+        // Append the sample code to the spec
         console.debug(`Sample code found: ${Array.from(samples.keys())[0]}`);
         spec.appendix.codeSample = Array.from(samples.values())[0].codeSample;
+      } else {
+        console.debug(`No matching sample code. `);
       }
+
+      // // GEt TOP K relevant sample code using BM25. Then check the matching score using LLM, if the matching score is above the threshold, append the sample code to the spec.Else, discard it.
+      // const samples = await SampleProvider.getInstance().getTopKMostRelevantScenarioSampleCodesBM25(
+      //   token,
+      //   spec.appendix.host,
+      //   spec.userInput,
+      //   1
+      // );
+      // if (samples.size > 0) {
+      //   // Only check the first sample code for now.
+      //   const matchingThreshold = 4;
+      //   const description = Array.from(samples.values())[0].description;
+      //   const isMatchedCheckedByLLM: boolean = await this.ifMatchingScoreIsAboveThresholdAsync(
+      //     token,
+      //     spec.userInput,
+      //     description,
+      //     matchingThreshold
+      //   );
+
+      //   if (isMatchedCheckedByLLM) {
+      //     // Append the sample code to the spec
+      //     console.debug(`Sample code found: ${Array.from(samples.keys())[0]}`);
+      //     spec.appendix.codeSample = Array.from(samples.values())[0].codeSample;
+      //   } else {
+      //     console.debug(`Not matching enough, skip the sample code.`);
+      //   }
+      // }
     }
 
     if (
@@ -167,6 +199,55 @@ export class CodeGenerator implements ISkill {
     spec.appendix.telemetryData.properties[PropertySystemCodeGenResult] = "true";
     spec.appendix.codeSnippet = codeSnippet;
     return { result: ExecutionResultEnum.Success, spec: spec };
+  }
+
+  private async ifMatchingScoreIsAboveThresholdAsync(
+    token: CancellationToken,
+    userInput: string,
+    description: string,
+    matchingThreshold: number
+  ): Promise<boolean> {
+    // Get the matched score of the best sample description and the user input using LLM
+    // We only handle the first sample here temporarily
+    const prompt = getSampleDescriptionAndUserInputMatchScorePrompt(description, userInput);
+
+    // Perform the desired operation
+    const messages: LanguageModelChatMessage[] = [new LanguageModelChatUserMessage(prompt)];
+    const copilotResponse = await getCopilotResponseAsString(
+      "copilot-gpt-4", // "copilot-gpt-4", // "copilot-gpt-3.5-turbo",
+      messages,
+      token
+    );
+    let copilotRet: {
+      matchingScore: number;
+    };
+    try {
+      if (copilotResponse) {
+        const codeSnippetRet = copilotResponse.match(/```json([\s\S]*?)```/);
+        if (!codeSnippetRet) {
+          // try if the LLM already give a json object
+          copilotRet = JSON.parse(copilotResponse.trim());
+        } else {
+          copilotRet = JSON.parse(codeSnippetRet[1].trim());
+        }
+        const matchingScore = copilotRet.matchingScore; // The matching score of the best sample description and the user input. The score is in the range of [0, 10].
+        console.debug(`Matching score: ${copilotRet.matchingScore}`);
+
+        const isMatchedCheckedByLLM = matchingScore > matchingThreshold ? true : false;
+        return new Promise<boolean>((resolve, reject) => {
+          resolve(isMatchedCheckedByLLM);
+        });
+      } else {
+        return new Promise<boolean>((resolve, reject) => {
+          resolve(true); // If the LLM parsing throw error, we won't descard the matched sample code
+        });
+      }
+    } catch (error) {
+      console.error("[Getting matching score] Failed to parse the response from Copilot:", error);
+      return new Promise<boolean>((resolve, reject) => {
+        resolve(true); // If the LLM parsing throw error, we won't descard the matched sample code
+      });
+    }
   }
 
   async userAskPreScanningAsync(

@@ -744,6 +744,86 @@ export function getMostRelevantClassUsingNameOnlyPrompt(
   `;
 }
 
+export function getSampleDescriptionAndUserInputMatchScorePrompt(
+  description: string,
+  userInput: string
+) {
+  const formattedUserInput = userInput.replace(/`/g, '"').replace(/'/g, '"');
+
+  return `
+  # Role:
+  You are an expert in Office JavaScript Add-ins and TypeScript, and you are familiar with scenario and the capabilities of Office JavaScript Add-ins. Determine how relevant the **User request** is to the **Sample description**.
+
+  # Context:
+  **User request:**
+  \`\`\`text
+  ${formattedUserInput}
+  \`\`\`
+
+  **Sample description:**
+  \`\`\`
+  ${description}
+  \`\`\`
+
+  # Your tasks:
+  - Understand the **User request** and **Sample description**. Determine how relevant the **User request is** to the **Sample description** and give a **relevance score**. The **relevance score"" must be one of the number in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]. The **relevance score** 0 means not relevant at all, The **Relevance score** 10 means completely same and relevance.
+  - When thingking, think about the coding approach under the context of Office JavaScript Addin developing. 
+
+  # The format of output:
+  - The output must be a JSON object. It could be like: 
+  \`\`\`json
+  { 
+    "matchingScore": **relevance score** 
+  } 
+  \`\`\`
+  - Beyond the json object, You should not add anything else to the output. Do not repeat the ask, do not ask questions, do not explain, do not provide additional context, do not add any other information to the output.
+  - For example, if the **User request** and the **Sample description** is completely same and relevance, then the **relevance score"" should be 10, the output json object could be like:
+  \`\`\`json
+  { 
+    "matchingScore": 10 
+  } 
+  \`\`\`
+  `;
+}
+
+export function getMostRelevantSamplePrompt(descriptions: string[], userInput: string) {
+  const descriptionsString = descriptions.map((description) => `  - ${description}`).join("\n");
+  const formattedDescriptionsString = descriptionsString.replace(/`/g, '"').replace(/'/g, '"');
+  const formattedUserInput = userInput.replace(/`/g, '"').replace(/'/g, '"');
+
+  return `
+  # Role:
+  You are an expert in Office JavaScript Add-ins, and you are familiar with scenario and the capabilities of Office JavaScript Add-ins. You need to do some semantic comparison on string related to Office JavaScript APIs/Add-ins capebilities and finish your tasks.
+  
+  # Context:
+  Your should do some semantic comparison on string, not write code. You should give your answer as an JSON object, and the output must be the JSON object in the format of:
+  {
+    relevantSampleDescriptions: ["string1", "string2"]
+  }
+  
+  # Your tasks:
+  Using **given description** below and **candidate strings** below, find strings in **candidate strings** that has strong similarity with the **given description**, remeber it as **relevant strings**. Give each of **relevant string** a relevance score.
+  Based on the relevance scores, you can pick 0 up to 3 strings from the candidates strings below, and put them into an array of string in the desc order of relevance score. If you don't find any relevant strings, you should pick 0 string and return an empty array. For the array of string, it should be the value of the key 'relevantSampleDescriptions' in the return object. You should strictly follow the format of output.
+  
+  # **given description**:
+  \`\`\`text
+  ${formattedUserInput}
+  \`\`\`
+
+  # **candidate strings**:
+  \`\`\`text
+  ${formattedDescriptionsString}
+  \`\`\`
+  
+  # The format of output:
+  Just return the JSON object in your output. Do not add summary, do not explain, do not repeat.
+  The example of output you must to follow:
+  {
+    relevantSampleDescriptions: ["string1", "string2"]
+  }
+`;
+}
+
 export function getMostRelevantMethodPropertyPrompt(
   codeSpec: string,
   classNamesList: string[],
