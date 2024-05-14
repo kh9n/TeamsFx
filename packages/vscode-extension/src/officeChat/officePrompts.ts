@@ -182,7 +182,10 @@ So once you understand the concept of Custom Functions, you should make sure:
 Let's think step by step.
 `;
 
-export function getUserInputBreakdownTaskUserPrompt(userInput: string): string {
+export function getUserInputBreakdownTaskUserPrompt(
+  userInput: string,
+  classDeclarationsStr: string
+): string {
   return `
   # Role:
   You are an expert in Office JavaScript Add-ins, and you are familiar with scenario and the capabilities of Office JavaScript Add-ins. You need to offer the user a suggestion based on the user's ask.
@@ -190,7 +193,7 @@ export function getUserInputBreakdownTaskUserPrompt(userInput: string): string {
   # Your tasks:
   For this given task: "${userInput}", that is about automate a process using Office JavaScript API. I need you help to analyze it under the context of Office JavaScript addins and Office JavaScript APIs, and give me your suggestion in the format of JSON object. You should pay attention to the following points:
   - Your language should be clear for a Office Add-ins developer to follow.
-  - Some of the term sounds like generic term, but they're not, they're specific to Office applications, like "Annotation", "Comment", "Range", "Table", "Chart", "Worksheet", "Workbook", "Document", "Slide", "Presentation", "Taskpane", "Custom Functions", "Shape", etc. You should keep those terms in the context of Office applications not general term.
+  - Some of the term sounds like generic term, but they're not, they're specific to Office applications. You should keep those terms which are in [${classDeclarationsStr},custom function] in the context of Office applications not general term.
 
   `;
 }
