@@ -406,7 +406,7 @@ class ${className} extends OfficeExtension.ClientObject {
       declarationPrompt += tempClassDeclaration;
       // console.debug(`API declarations: \n${declarationPrompt}`);
     }
-    const model: "copilot-gpt-4" | "copilot-gpt-3.5-turbo" = "copilot-gpt-3.5-turbo";
+    const model: "copilot-gpt-4" | "copilot-gpt-3.5-turbo" = "copilot-gpt-4";
     let msgCount = 0;
 
     // Perform the desired operation
