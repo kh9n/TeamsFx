@@ -71,7 +71,7 @@ export class SampleProvider {
     sample: string
   ): Promise<Map<string, SampleData>> {
     const pickedDeclarations: Map<string, SampleData> = new Map<string, SampleData>();
-    const model: "copilot-gpt-3.5-turbo" | "copilot-gpt-4" = "copilot-gpt-4";
+    const model: "copilot-gpt-3.5-turbo" | "copilot-gpt-4" = "copilot-gpt-3.5-turbo";
     const t1 = performance.now();
     let countOfLLMInvoke = 0;
     const classSummaries = await DeclarationFinder.getInstance().getClassSummariesForHost(host);
