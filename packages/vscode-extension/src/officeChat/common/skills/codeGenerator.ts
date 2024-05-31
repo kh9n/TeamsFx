@@ -262,44 +262,44 @@ export class CodeGenerator implements ISkill {
       new LanguageModelChatMessage(LanguageModelChatMessageRole.User, userPrompt),
     ];
 
-    //     let declarations = new Map<string, SampleData>();
-    //     if (!spec.appendix.apiDeclarationsReference || !spec.appendix.apiDeclarationsReference.size) {
-    //       declarations = await SampleProvider.getInstance().getMostRelevantDeclarationsUsingLLM(
-    //         token,
-    //         host,
-    //         userInput,
-    //         "" //sampleCode
-    //       );
+    let declarations = new Map<string, SampleData>();
+    if (!spec.appendix.apiDeclarationsReference || !spec.appendix.apiDeclarationsReference.size) {
+      declarations = await SampleProvider.getInstance().getMostRelevantDeclarationsUsingLLM(
+        token,
+        host,
+        userInput,
+        "" //sampleCode
+      );
 
-    //       spec.appendix.apiDeclarationsReference = declarations;
-    //     } else {
-    //       declarations = spec.appendix.apiDeclarationsReference;
-    //     }
+      spec.appendix.apiDeclarationsReference = declarations;
+    } else {
+      declarations = spec.appendix.apiDeclarationsReference;
+    }
 
-    //     if (declarations.size > 0) {
-    //       const groupedMethodsOrProperties: Map<string, SampleData[]> = new Map<string, SampleData[]>();
-    //       declarations.forEach((declaration) => {
-    //         if (!groupedMethodsOrProperties.has(declaration.definition)) {
-    //           groupedMethodsOrProperties.set(declaration.definition, []);
-    //         }
-    //         groupedMethodsOrProperties.get(declaration.definition)?.push(declaration);
-    //       });
+    if (declarations.size > 0) {
+      const groupedMethodsOrProperties: Map<string, SampleData[]> = new Map<string, SampleData[]>();
+      declarations.forEach((declaration) => {
+        if (!groupedMethodsOrProperties.has(declaration.definition)) {
+          groupedMethodsOrProperties.set(declaration.definition, []);
+        }
+        groupedMethodsOrProperties.get(declaration.definition)?.push(declaration);
+      });
 
-    //       let tempClassDeclaration = "\n```typescript\n";
-    //       groupedMethodsOrProperties.forEach((methodsOrPropertiesCandidates, className) => {
-    //         tempClassDeclaration += `
-    // class ${className} extends OfficeExtension.ClientObject {
-    //   ${methodsOrPropertiesCandidates.map((sampleData) => sampleData.codeSample).join("\n")}
-    // }
-    // \n
-    //       `;
-    //       });
-    //       tempClassDeclaration += "```\n";
+      let tempClassDeclaration = "\n```typescript\n";
+      groupedMethodsOrProperties.forEach((methodsOrPropertiesCandidates, className) => {
+        tempClassDeclaration += `
+class ${className} extends OfficeExtension.ClientObject {
+  ${methodsOrPropertiesCandidates.map((sampleData) => sampleData.codeSample).join("\n")}
+}
+\n
+      `;
+      });
+      tempClassDeclaration += "```\n";
 
-    //       console.debug(`API declarations: \n${tempClassDeclaration}`);
-    //       const classPrompt = `Here are some API declaration that you may want to use as reference, you should only pick those relevant to the user's ask. List the name of used method, property with its class as part of the spec and function descriptions :\n\n${tempClassDeclaration}`;
-    //       messages.push(new LanguageModelChatMessage(LanguageModelChatMessageRole.System, classPrompt));
-    //     }
+      console.debug(`API declarations: \n${tempClassDeclaration}`);
+      const classPrompt = `Here are some API declaration that you may want to use as reference, you should only pick those relevant to the user's ask. List the name of used method, property with its class as part of the spec and function descriptions :\n\n${tempClassDeclaration}`;
+      messages.push(new LanguageModelChatMessage(LanguageModelChatMessageRole.System, classPrompt));
+    }
 
     if (sampleCode.length > 0) {
       messages.push(
@@ -371,42 +371,42 @@ export class CodeGenerator implements ISkill {
         break;
     }
 
-    //     if (!spec.appendix.apiDeclarationsReference || !spec.appendix.apiDeclarationsReference.size) {
-    //       const declarations = await SampleProvider.getInstance().getMostRelevantDeclarationsUsingLLM(
-    //         token,
-    //         host,
-    //         codeSpec,
-    //         "" //sampleCode
-    //       );
+    if (!spec.appendix.apiDeclarationsReference || !spec.appendix.apiDeclarationsReference.size) {
+      const declarations = await SampleProvider.getInstance().getMostRelevantDeclarationsUsingLLM(
+        token,
+        host,
+        codeSpec,
+        "" //sampleCode
+      );
 
-    //       spec.appendix.apiDeclarationsReference = declarations;
-    //     }
+      spec.appendix.apiDeclarationsReference = declarations;
+    }
 
-    //     let declarationPrompt = getGenerateCodeDeclarationPrompt();
-    //     if (spec.appendix.apiDeclarationsReference.size > 0) {
-    //       const groupedMethodsOrProperties: Map<string, SampleData[]> = new Map<string, SampleData[]>();
-    //       spec.appendix.apiDeclarationsReference.forEach((declaration) => {
-    //         if (!groupedMethodsOrProperties.has(declaration.definition)) {
-    //           groupedMethodsOrProperties.set(declaration.definition, []);
-    //         }
-    //         groupedMethodsOrProperties.get(declaration.definition)?.push(declaration);
-    //       });
+    let declarationPrompt = getGenerateCodeDeclarationPrompt();
+    if (spec.appendix.apiDeclarationsReference.size > 0) {
+      const groupedMethodsOrProperties: Map<string, SampleData[]> = new Map<string, SampleData[]>();
+      spec.appendix.apiDeclarationsReference.forEach((declaration) => {
+        if (!groupedMethodsOrProperties.has(declaration.definition)) {
+          groupedMethodsOrProperties.set(declaration.definition, []);
+        }
+        groupedMethodsOrProperties.get(declaration.definition)?.push(declaration);
+      });
 
-    //       let tempClassDeclaration = "\n```typescript\n";
-    //       groupedMethodsOrProperties.forEach((methodsOrPropertiesCandidates, className) => {
-    //         tempClassDeclaration += `
-    // class ${className} extends OfficeExtension.ClientObject {
-    //   ${methodsOrPropertiesCandidates.map((sampleData) => sampleData.codeSample).join("\n")}
-    // }
-    // \n
-    //       `;
-    //       });
-    //       tempClassDeclaration += "```\n";
+      let tempClassDeclaration = "\n```typescript\n";
+      groupedMethodsOrProperties.forEach((methodsOrPropertiesCandidates, className) => {
+        tempClassDeclaration += `
+class ${className} extends OfficeExtension.ClientObject {
+  ${methodsOrPropertiesCandidates.map((sampleData) => sampleData.codeSample).join("\n")}
+}
+\n
+      `;
+      });
+      tempClassDeclaration += "```\n";
 
-    //       declarationPrompt += tempClassDeclaration;
-    //       // console.debug(`API declarations: \n${declarationPrompt}`);
-    //     }
-    const model: "copilot-gpt-4" | "copilot-gpt-3.5-turbo" = "copilot-gpt-4";
+      declarationPrompt += tempClassDeclaration;
+      // console.debug(`API declarations: \n${declarationPrompt}`);
+    }
+    const model: "copilot-gpt-4" | "copilot-gpt-3.5-turbo" = "copilot-gpt-3.5-turbo";
     let msgCount = 0;
 
     // Perform the desired operation
@@ -414,22 +414,22 @@ export class CodeGenerator implements ISkill {
     const messages: LanguageModelChatMessage[] = [
       new LanguageModelChatMessage(LanguageModelChatMessageRole.User, userPrompt),
     ];
-    // // May sure for the custom functions, the reference user prompt is shown first so it has lower risk to be cut off
-    // if (isCustomFunctions) {
-    //   messages.push(
-    //     new LanguageModelChatMessage(LanguageModelChatMessageRole.System, referenceUserPrompt)
-    //   );
-    //   messages.push(
-    //     new LanguageModelChatMessage(LanguageModelChatMessageRole.System, declarationPrompt)
-    //   );
-    // } else {
-    //   messages.push(
-    //     new LanguageModelChatMessage(LanguageModelChatMessageRole.System, declarationPrompt)
-    //   );
-    //   messages.push(
-    //     new LanguageModelChatMessage(LanguageModelChatMessageRole.System, referenceUserPrompt)
-    //   );
-    // }
+    // May sure for the custom functions, the reference user prompt is shown first so it has lower risk to be cut off
+    if (isCustomFunctions) {
+      messages.push(
+        new LanguageModelChatMessage(LanguageModelChatMessageRole.System, referenceUserPrompt)
+      );
+      messages.push(
+        new LanguageModelChatMessage(LanguageModelChatMessageRole.System, declarationPrompt)
+      );
+    } else {
+      messages.push(
+        new LanguageModelChatMessage(LanguageModelChatMessageRole.System, declarationPrompt)
+      );
+      messages.push(
+        new LanguageModelChatMessage(LanguageModelChatMessageRole.System, referenceUserPrompt)
+      );
+    }
     if (sampleCode.length > 0) {
       let samplePrompt = getGenerateCodeSamplePrompt();
       samplePrompt += `
